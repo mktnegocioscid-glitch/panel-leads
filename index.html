@@ -327,15 +327,22 @@ async function doRefresh(){
     Papa.parse(txt,{skipEmptyLines:true,complete:(res)=>{
       // col0=fecha, col1=pais, col2=utm_source, col3=utm_campaign
       // col0=Submission Date, col1=Pais, col2=utm_source, col3=utm_campaign
+      // DEBUG: log first 3 rows to console
+      console.log('CSV total rows:', res.data.length);
+      if(res.data.length>0)console.log('Header row:', JSON.stringify(res.data[0]));
+      if(res.data.length>1)console.log('Row 1:', JSON.stringify(res.data[1]));
+      if(res.data.length>2)console.log('Row 2:', JSON.stringify(res.data[2]));
+      
       ALL=res.data.filter((r,i)=>{
         if(i===0)return false;
         if(!r[0]||!r[0].trim())return false;
         const d=parseDate(r[0]);
+        if(i<=3)console.log(`Row ${i} date raw:`, JSON.stringify(r[0]), '→ parsed:', d);
         if(!d)return false;
-        // attach parsed YYYY-MM-DD string to row for later use
         r._date=d;
         return d>=new Date('2025-01-01');
       });
+      console.log('ALL rows after filter:', ALL.length);
       buildSB();
       if(!ACT)ACT=curK();
       renderMonth(ACT);
