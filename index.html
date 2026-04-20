@@ -234,8 +234,23 @@ let ALL=[], CHS=[], ACT='';
 
 const TTP={backgroundColor:'#1c243a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#a0aec0',bodyColor:'#f0f2f7',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8};
 
-function pd(s){if(!s)return null;const d=new Date(s);return isNaN(d)?null:d}
-function ds(d){return d.toISOString().slice(0,10)}
+// Robust date parser — handles all JotForm formats
+// "2025-01-15 14:30:00", "01/15/2025", "2025-01-15T14:30:00Z", "January 15, 2025"
+function parseDate(s){
+  if(!s||!s.trim())return null;
+  s=s.trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return new Date(+m[3],+m[1]-1,+m[2]);
+  const d=new Date(s);
+  return isNaN(d)?null:d;
+}
+function pd(s){return parseDate(s)}
+function ds(d){
+  const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),dy=String(d.getDate()).padStart(2,'0');
+  return y+'-'+mo+'-'+dy;
+}
 function mk(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function pk(k){const[y,m]=k.split('-');return{y:+y,m:+m-1}}
 function prevK(k){const{y,m}=pk(k);return m===0?`${y-1}-12`:`${y}-${String(m).padStart(2,'0')}`}
@@ -262,8 +277,18 @@ function normCampaign(raw){
 }
 function srcLabel(k){const d=SRC_MAP.find(x=>x.key===k);return d?d.label:k}
 
-function gRows(k){return ALL.filter(r=>r[0]&&r[0].slice(0,7)===k)}
-function gDay(rows){const m={};rows.forEach(r=>{const d=r[0]?r[0].slice(0,10):'';if(d)m[d]=(m[d]||0)+1});return m}
+function getDateStr(r){
+  if(r._date)return ds(r._date);
+  const d=parseDate(r[0]);
+  return d?ds(d):'';
+}
+function getMonthKey(r){
+  if(r._date)return mk(r._date);
+  const d=parseDate(r[0]);
+  return d?mk(d):'';
+}
+function gRows(k){return ALL.filter(r=>getMonthKey(r)===k)}
+function gDay(rows){const m={};rows.forEach(r=>{const d=getDateStr(r);if(d)m[d]=(m[d]||0)+1});return m}
 function gCountry(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
 function gSrc(rows){
   const m={};
@@ -271,8 +296,8 @@ function gSrc(rows){
   return m;
 }
 function gPauta(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
-function f15(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);return rows.filter(r=>{const d=pd(r[0]);return d&&d<cut})}
-function l15(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);const end=new Date(y,m+1,0);return rows.filter(r=>{const d=pd(r[0]);return d&&d>=cut&&d<=end})}
+function f15(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);return rows.filter(r=>{const d=r._date||pd(r[0]);return d&&d<cut})}
+function l15(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);const end=new Date(y,m+1,0);return rows.filter(r=>{const d=r._date||pd(r[0]);return d&&d>=cut&&d<=end})}
 function last12(k){const{y,m}=pk(k);const ks=[];for(let i=11;i>=0;i--){let mm=m-i,yy=y;while(mm<0){mm+=12;yy--}ks.push(`${yy}-${String(mm+1).padStart(2,'0')}`)}return ks}
 function curK(){return mk(new Date())}
 
@@ -301,7 +326,16 @@ async function doRefresh(){
     const txt=await r.text();
     Papa.parse(txt,{skipEmptyLines:true,complete:(res)=>{
       // col0=fecha, col1=pais, col2=utm_source, col3=utm_campaign
-      ALL=res.data.filter((r,i)=>i>0&&r[0]&&/\d{4}-\d{2}-\d{2}/.test(r[0])&&new Date(r[0])>=new Date('2025-01-01'));
+      // col0=Submission Date, col1=Pais, col2=utm_source, col3=utm_campaign
+      ALL=res.data.filter((r,i)=>{
+        if(i===0)return false;
+        if(!r[0]||!r[0].trim())return false;
+        const d=parseDate(r[0]);
+        if(!d)return false;
+        // attach parsed YYYY-MM-DD string to row for later use
+        r._date=d;
+        return d>=new Date('2025-01-01');
+      });
       buildSB();
       if(!ACT)ACT=curK();
       renderMonth(ACT);
@@ -321,7 +355,7 @@ async function doRefresh(){
 }
 
 function buildSB(){
-  const keys={};ALL.forEach(r=>{if(r[0]){const k=r[0].slice(0,7);keys[k]=(keys[k]||0)+1}});
+  const keys={};ALL.forEach(r=>{const k=getMonthKey(r);if(k)keys[k]=(keys[k]||0)+1});
   const sorted=Object.keys(keys).sort().reverse();
   const byY={};sorted.forEach(k=>{const y=k.slice(0,4);if(!byY[y])byY[y]=[];byY[y].push(k)});
   const ck=curK();let html='';
@@ -357,9 +391,9 @@ function renderMonth(key){
   const daysInM=new Date(y,m+1,0).getDate(),daysInP=new Date(py,pm+1,0).getDate();
   const maxD=isNow?todayN:daysInM;
 
-  const leadsToday=isNow?curR.filter(r=>r[0]&&r[0].slice(0,10)===todayStr).length:0;
-  const curUntil=isNow?curR.filter(r=>{const d=pd(r[0]);return d&&d.getDate()<=todayN}).length:curR.length;
-  const prevUntil=prevR.filter(r=>{const d=pd(r[0]);return d&&d.getDate()<=todayN}).length;
+  const leadsToday=isNow?curR.filter(r=>getDateStr(r)===todayStr).length:0;
+  const curUntil=isNow?curR.filter(r=>{const d=r._date||pd(r[0]);return d&&d.getDate()<=todayN}).length:curR.length;
+  const prevUntil=prevR.filter(r=>{const d=r._date||pd(r[0]);return d&&d.getDate()<=todayN}).length;
   const avg=(maxD>0?curR.length/maxD:0);
 
   const f15c=f15(curR,key).length,f15p=f15(prevR,pKey).length;
@@ -412,7 +446,7 @@ function renderMonth(key){
   // KPIs
   h+=`<div class="kpi-row">`;
   if(isNow){
-    const prevTL=prevR.filter(r=>{const d=pd(r[0]);return d&&d.getDate()===todayN}).length;
+    const prevTL=prevR.filter(r=>{const d=r._date||pd(r[0]);return d&&d.getDate()===todayN}).length;
     h+=`<div class="kpi feat-blue"><div class="kpi-lbl">Leads hoy</div><div class="kpi-val">${leadsToday}</div>${bdg(dlt(leadsToday,prevTL),'mismo día '+prevMN)}</div>`;
   }
   h+=`<div class="kpi feat-green"><div class="kpi-lbl">Total mes</div><div class="kpi-val">${curR.length}</div>${bdg(dm,prevMN)}</div>`;
