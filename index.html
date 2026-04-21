@@ -47,10 +47,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 /* SIDEBAR */
 .sidebar{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .sb-hdr{padding:0;border-bottom:1px solid var(--border);flex-shrink:0}
-.sb-tabs{display:flex}
-.sb-tab{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:transparent;border-top:none;border-left:none;border-right:none;font-family:'Inter',sans-serif}
-.sb-tab:hover{color:var(--text2)}
-.sb-tab.active{color:var(--green);border-bottom-color:var(--green)}
+.sb-tabs{display:flex;padding:6px 8px;gap:4px}
+.sb-tab{flex:1;padding:5px 6px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);cursor:pointer;border-radius:6px;transition:all 0.15s;background:transparent;border:1px solid transparent;font-family:'Inter',sans-serif}
+.sb-tab:hover{color:var(--text2);background:var(--bg3)}
+.sb-tab.active{color:var(--green);background:var(--gdim);border-color:rgba(0,229,160,0.2)}
 .sb-panel{display:none;flex:1;overflow-y:auto;padding:6px}
 .sb-panel.active{display:block}
 .sb-panel::-webkit-scrollbar{width:2px}
@@ -192,15 +192,15 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
   <nav class="sidebar">
     <div class="sb-hdr">
       <div class="sb-tabs">
-        <button class="sb-tab active" onclick="switchTab('presupuestos',this)">Presupuestos</button>
         <button class="sb-tab" onclick="switchTab('reclutamiento',this)">Reclutamiento</button>
+        <button class="sb-tab active" onclick="switchTab('presupuestos',this)">Presupuestos</button>
       </div>
-    </div>
-    <div class="sb-panel active" id="tab-presupuestos">
-      <div id="sb-nav"></div>
     </div>
     <div class="sb-panel" id="tab-reclutamiento">
       <div class="sb-placeholder">Próximamente<br>Sección en desarrollo</div>
+    </div>
+    <div class="sb-panel active" id="tab-presupuestos">
+      <div id="sb-nav"></div>
     </div>
   </nav>
 
@@ -583,13 +583,13 @@ function renderMonth(key){
       labels:ordSrc.map(srcLabel),
       datasets:[{data:ordSrc.map(k=>srcC[k]||0),backgroundColor:srcColors.map(c=>c+'2a'),borderColor:srcColors,borderWidth:2,hoverOffset:5}]
     },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
-      legend:{display:true,position:'right',labels:{font:{size:11,family:'Inter'},color:'#a0aec0',boxWidth:10,padding:8,
+      legend:{display:true,position:'right',labels:{font:{size:11,family:'Inter'},color:'#e2e8f0',boxWidth:10,padding:10,
         generateLabels:(chart)=>{
           const d=chart.data;
           return d.labels.map((lbl,i)=>{
             const val=d.datasets[0].data[i];
             const pct=srcTotal>0?Math.round(val/srcTotal*100):0;
-            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i};
+            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i,fontColor:'#e2e8f0'};
           });
         }
       }},
