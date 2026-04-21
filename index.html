@@ -234,26 +234,18 @@ let ALL=[], CHS=[], ACT='';
 
 const TTP={backgroundColor:'#1c243a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#a0aec0',bodyColor:'#f0f2f7',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8};
 
-// Ultra-robust date parser — accepts ANY format JotForm might export
+// Date parser — format is DD/MM/YYYY HH:MM:SS (JotForm export)
+// e.g. "20/4/2026 13:53:33"
 function parseDate(s){
   if(!s)return null;
   s=String(s).trim();
-  if(!s||s==='-'||s.toLowerCase()==='date')return null;
-  // YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
-  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
-  // MM/DD/YYYY or M/D/YYYY
-  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m)return new Date(+m[3],+m[1]-1,+m[2]);
-  // DD-MM-YYYY
-  m=s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if(!s||s==='-'||s.toLowerCase()==='date'||s.toLowerCase()==='submission date')return null;
+  // PRIMARY: DD/MM/YYYY or D/M/YYYY (with optional time)
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m)return new Date(+m[3],+m[2]-1,+m[1]);
-  // ISO with T
-  m=s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  // FALLBACK: YYYY-MM-DD (with optional time)
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(m)return new Date(+m[1],+m[2]-1,+m[3]);
-  // "Apr 20, 2026" or "April 20, 2026"
-  const native=new Date(s);
-  if(!isNaN(native))return native;
   return null;
 }
 function pd(s){return parseDate(s)}
