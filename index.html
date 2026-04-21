@@ -212,7 +212,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 </div>
 
 <script>
-const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vSEKT-QQSvH-QORtGmemzDALcug4x9kLUGx-8LPdTu15stPbboLsOn5OiSNfnD3YGM5qu8M5rPl1624/pub?gid=1652833601&single=true&output=csv';
+const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vRXPTSjxLsr-O9o8vBcaTu-EQnZscUaJdjPwv8O6wTfQuxOv1uQcMgpUoIerOmZTA6kLa-H3ZjNijLD/pub?gid=1565092566&single=true&output=csv';
 const JOTFORM_URL='https://www.jotform.com/tables/231885007672662';
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MES3=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -234,24 +234,35 @@ let ALL=[], CHS=[], ACT='';
 
 const TTP={backgroundColor:'#1c243a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#a0aec0',bodyColor:'#f0f2f7',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8};
 
-// Robust date parser — handles all JotForm formats
-// "2025-01-15 14:30:00", "01/15/2025", "2025-01-15T14:30:00Z", "January 15, 2025"
+// Ultra-robust date parser — accepts ANY format JotForm might export
 function parseDate(s){
-  if(!s||!s.trim())return null;
-  s=s.trim();
+  if(!s)return null;
+  s=String(s).trim();
+  if(!s||s==='-'||s.toLowerCase()==='date')return null;
+  // YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
   let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  // MM/DD/YYYY or M/D/YYYY
   m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m)return new Date(+m[3],+m[1]-1,+m[2]);
-  const d=new Date(s);
-  return isNaN(d)?null:d;
+  // DD-MM-YYYY
+  m=s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  // ISO with T
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  // "Apr 20, 2026" or "April 20, 2026"
+  const native=new Date(s);
+  if(!isNaN(native))return native;
+  return null;
 }
 function pd(s){return parseDate(s)}
 function ds(d){
+  if(!d)return'';
   const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),dy=String(d.getDate()).padStart(2,'0');
   return y+'-'+mo+'-'+dy;
 }
-function mk(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function mk(d){if(!d)return'';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function pk(k){const[y,m]=k.split('-');return{y:+y,m:+m-1}}
 function prevK(k){const{y,m}=pk(k);return m===0?`${y-1}-12`:`${y}-${String(m).padStart(2,'0')}`}
 function lyK(k){const{y,m}=pk(k);return`${y-1}-${String(m+1).padStart(2,'0')}`}
@@ -325,24 +336,29 @@ async function doRefresh(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const txt=await r.text();
     Papa.parse(txt,{skipEmptyLines:true,complete:(res)=>{
-      // col0=fecha, col1=pais, col2=utm_source, col3=utm_campaign
-      // col0=Submission Date, col1=Pais, col2=utm_source, col3=utm_campaign
-      // DEBUG: log first 3 rows to console
-      console.log('CSV total rows:', res.data.length);
-      if(res.data.length>0)console.log('Header row:', JSON.stringify(res.data[0]));
-      if(res.data.length>1)console.log('Row 1:', JSON.stringify(res.data[1]));
-      if(res.data.length>2)console.log('Row 2:', JSON.stringify(res.data[2]));
-      
+      const r1=res.data[1]||[], r2=res.data[2]||[], r3=res.data[3]||[];
+      const CUT=new Date('2025-01-01');
       ALL=res.data.filter((r,i)=>{
         if(i===0)return false;
-        if(!r[0]||!r[0].trim())return false;
+        if(!r[0]||!String(r[0]).trim())return false;
         const d=parseDate(r[0]);
-        if(i<=3)console.log(`Row ${i} date raw:`, JSON.stringify(r[0]), '→ parsed:', d);
-        if(!d)return false;
+        if(!d||isNaN(d))return false;
         r._date=d;
-        return d>=new Date('2025-01-01');
+        return d>=CUT;
       });
-      console.log('ALL rows after filter:', ALL.length);
+      if(ALL.length===0){
+        const hdr=(res.data[0]||[]).join(' | ');
+        const s1=r1[0], s2=r2[0], s3=r3[0];
+        const p1=parseDate(s1), p2=parseDate(s2), p3=parseDate(s3);
+        document.getElementById('err-area').innerHTML=`<div class="err-box" style="font-family:monospace;font-size:12px;line-height:1.9">
+          <strong>⚠ CSV descargado (${res.data.length} filas) pero 0 registros válidos desde 2025.</strong><br>
+          <b>Columnas:</b> ${hdr}<br>
+          <b>Fila 1 fecha:</b> "${s1}" → ${p1?p1.toISOString().slice(0,10):'NO PARSEÓ'}<br>
+          <b>Fila 2 fecha:</b> "${s2}" → ${p2?p2.toISOString().slice(0,10):'NO PARSEÓ'}<br>
+          <b>Fila 3 fecha:</b> "${s3}" → ${p3?p3.toISOString().slice(0,10):'NO PARSEÓ'}
+        </div>`;
+        document.getElementById('err-area').style.display='block';
+      }
       buildSB();
       if(!ACT)ACT=curK();
       renderMonth(ACT);
