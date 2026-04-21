@@ -234,18 +234,31 @@ let ALL=[], CHS=[], ACT='';
 
 const TTP={backgroundColor:'#1c243a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#a0aec0',bodyColor:'#f0f2f7',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8};
 
-// Date parser — format is DD/MM/YYYY HH:MM:SS (JotForm export)
-// e.g. "20/4/2026 13:53:33"
+// Date parser — primary format: DD/MM/YYYY (JotForm, e.g. "20/4/2026")
 function parseDate(s){
   if(!s)return null;
   s=String(s).trim();
-  if(!s||s==='-'||s.toLowerCase()==='date'||s.toLowerCase()==='submission date')return null;
-  // PRIMARY: DD/MM/YYYY or D/M/YYYY (with optional time)
+  if(!s||s==='-')return null;
+  const low=s.toLowerCase();
+  if(low==='date'||low==='submission date'||low==='fecha')return null;
+
+  // DD/MM/YYYY — first number is DAY (1-31), second is MONTH (1-12)
   let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m)return new Date(+m[3],+m[2]-1,+m[1]);
-  // FALLBACK: YYYY-MM-DD (with optional time)
+  if(m){
+    const day=+m[1], mon=+m[2], yr=+m[3];
+    // Sanity: day 1-31, month 1-12, year 2020-2027
+    if(day>=1&&day<=31&&mon>=1&&mon<=12&&yr>=2020&&yr<=2027)
+      return new Date(yr, mon-1, day);
+    return null;
+  }
+  // YYYY-MM-DD
   m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  if(m){
+    const yr=+m[1],mon=+m[2],day=+m[3];
+    if(yr>=2020&&yr<=2027&&mon>=1&&mon<=12&&day>=1&&day<=31)
+      return new Date(yr,mon-1,day);
+    return null;
+  }
   return null;
 }
 function pd(s){return parseDate(s)}
