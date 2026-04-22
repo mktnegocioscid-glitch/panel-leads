@@ -55,7 +55,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .sb-panel.active{display:block}
 .sb-panel::-webkit-scrollbar{width:2px}
 .sb-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-.yr-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);padding:8px 8px 2px;display:block}
+.yr-group{margin-bottom:2px}
+.yr-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 10px 5px;background:transparent;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:color 0.15s}
+.yr-toggle span:first-child{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#fff}
+.yr-toggle:hover span:first-child{color:var(--green)}
+.yr-toggle.collapsed span:first-child{color:var(--text3)}
+.yr-arrow{font-size:10px;color:var(--text3);transition:color 0.15s}
+.yr-toggle:hover .yr-arrow{color:var(--green)}
+.yr-months{display:block}
+
+/* TOOLTIP */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;gap:6px}
+.tip-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0;line-height:1;transition:all 0.15s}
+.tip-icon:hover{border-color:var(--green);color:var(--green)}
+.tip-box{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:100;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);line-height:1.5;width:220px;font-weight:400;text-transform:none;letter-spacing:0;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.tip-wrap:hover .tip-box{display:block}
 .mb-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:6px 10px;border-radius:var(--rs);border:none;background:transparent;cursor:pointer;color:var(--text2);font-size:13px;font-family:'Inter',sans-serif;transition:all 0.12s;text-align:left}
 .mb-btn:hover{background:var(--bg3);color:var(--text)}
 .mb-btn.active{background:var(--gdim);color:var(--green);font-weight:500}
@@ -371,7 +385,13 @@ async function doRefresh(){
       buildSB();
       if(!ACT)ACT=curK();
       renderMonth(ACT);
-      document.getElementById('upd-txt').textContent='Act: '+new Date().toLocaleString('es-AR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
+      const _now=new Date();
+      const _dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const _meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      const _hh=String(_now.getHours()).padStart(2,'0');
+      const _mm=String(_now.getMinutes()).padStart(2,'0');
+      const _fechaCompleta=_dias[_now.getDay()]+' '+_now.getDate()+' de '+_meses[_now.getMonth()]+' de '+_now.getFullYear()+' '+_hh+':'+_mm;
+      document.getElementById('upd-txt').textContent=_fechaCompleta;
       btn.classList.remove('loading');
       document.getElementById('ls').style.display='none';
       document.getElementById('dash').style.display='block';
@@ -392,14 +412,33 @@ function buildSB(){
   const byY={};sorted.forEach(k=>{const y=k.slice(0,4);if(!byY[y])byY[y]=[];byY[y].push(k)});
   const ck=curK();let html='';
   Object.keys(byY).sort().reverse().forEach(y=>{
-    html+=`<div><span class="yr-lbl">${y}</span>`;
+    html+=`<div class="yr-group">
+      <button class="yr-toggle" onclick="toggleYear('${y}',this)">
+        <span>${y}</span>
+        <span class="yr-arrow">▾</span>
+      </button>
+      <div class="yr-months" id="yr-${y}">`;
     byY[y].forEach(k=>{
       const{m}=pk(k);const isc=k===ck;
       html+=`<button class="mb-btn${k===ACT?' active':''}${isc?' cur':''}" onclick="selM('${k}')"><span style="display:flex;align-items:center"><span class="mb-dot"></span>${MESES[m]}</span><span class="mc">${keys[k]}</span></button>`;
     });
-    html+='</div>';
+    html+=`</div></div>`;
   });
   document.getElementById('sb-nav').innerHTML=html;
+}
+
+function toggleYear(y,btn){
+  const el=document.getElementById('yr-'+y);
+  const arrow=btn.querySelector('.yr-arrow');
+  if(el.style.display==='none'){
+    el.style.display='block';
+    arrow.textContent='▾';
+    btn.classList.remove('collapsed');
+  }else{
+    el.style.display='none';
+    arrow.textContent='▸';
+    btn.classList.add('collapsed');
+  }
 }
 
 function selM(k){
@@ -408,6 +447,13 @@ function selM(k){
   document.querySelectorAll('.mb-btn').forEach(b=>{if(b.getAttribute('onclick')===`selM('${k}')`)b.classList.add('active')});
   renderMonth(k);
   document.getElementById('main-content').scrollTop=0;
+}
+
+function tip(title, explanation){
+  return `<div class="tip-wrap">
+    <span class="card-ti">${title}</span>
+    <span class="tip-icon" tabindex="0">?<span class="tip-box">${explanation}</span></span>
+  </div>`;
 }
 
 function renderMonth(key){
@@ -490,7 +536,7 @@ function renderMonth(key){
   h+=`</div>`;
 
   // Quincenas
-  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div><div class="card-ti">Análisis por quincena</div><div class="card-su">vs ${prevMN} ${py}</div></div></div>
+  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (días 1–15 y 16–fin) y compara cada una con el mismo período del mes anterior.")}<div class="card-su">vs ${prevMN} ${py}</div></div></div>
     <div class="qg">
       <div class="qcard"><div class="qlbl">Primera quincena (1–15)</div><div class="qvals"><span class="qcur">${f15c}</span><span class="qprev">vs ${f15p} en ${prevMN}</span></div>${bdg(dlt(f15c,f15p),prevMN)}</div>
       <div class="qcard"><div class="qlbl">Segunda quincena (16–fin)</div><div class="qvals"><span class="qcur">${l15c}</span><span class="qprev">vs ${l15p} en ${prevMN}</span></div>${bdg(dlt(l15c,l15p),prevMN)}</div>
@@ -499,7 +545,7 @@ function renderMonth(key){
   // Diario
   h+=`<div class="gr g1"><div class="card">
     <div class="card-hd">
-      <div><div class="card-ti">Leads por día del mes</div><div class="card-su">${MESES[m]} ${y} vs ${prevMN} ${py}</div></div>
+      <div>${tip("Leads por día del mes","Muestra cuántos leads se captaron cada día. La línea punteada representa el mes anterior para comparación visual.")}<div class="card-su">${MESES[m]} ${y} vs ${prevMN} ${py}</div></div>
       <div class="leg"><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
     </div>
     <div class="cw h210"><canvas id="cdaily" role="img" aria-label="Leads por día"></canvas></div>
@@ -507,14 +553,14 @@ function renderMonth(key){
 
   // 12 meses + países
   h+=`<div class="gr g2">
-    <div class="card"><div class="card-hd"><div><div class="card-ti">Últimos 12 meses</div><div class="card-su">Evolución mensual de captación</div></div></div><div class="cw h210"><canvas id="cmonth" role="img" aria-label="Leads por mes"></canvas></div></div>
-    <div class="card"><div class="card-hd"><div><div class="card-ti">Leads por país — ${MESES[m]}</div><div class="card-su">Verde ↑ · Rojo ↓ · Azul = nuevo vs ${prevMN}</div></div></div><div class="cw h210"><canvas id="cctry" role="img" aria-label="Leads por país"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de leads en el último año. La barra del mes seleccionado aparece resaltada en verde.")}<div class="card-su">Evolución mensual de captación</div></div></div><div class="cw h210"><canvas id="cmonth" role="img" aria-label="Leads por mes"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div>${tip(`Leads por país — ${MESES[m]}`,"Verde = crecimiento vs mes anterior · Rojo = caída · Azul = país nuevo este mes.")}<div class="card-su">Verde ↑ · Rojo ↓ · Azul = nuevo vs ${prevMN}</div></div></div><div class="cw h210"><canvas id="cctry" role="img" aria-label="Leads por país"></canvas></div></div>
   </div>`;
 
   // Tabla países
   if(allCtry.length){
     const maxV=Math.max(...allCtry.map(c=>ccC[c]||0),1);
-    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div><div class="card-ti">Detalle por país</div><div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
+    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
     <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Tendencia</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
     <div class="ct-rows">`;
     allCtry.forEach((c,i)=>{
@@ -529,9 +575,9 @@ function renderMonth(key){
   if(ordSrc.length>0){
     const srcMaxV=Math.max(...ordSrc.map(k=>srcC[k]||0),1);
     h+=`<div class="gr g2">
-    <div class="card"><div class="card-hd"><div><div class="card-ti">Origen de leads — ${MESES[m]}</div><div class="card-su">Distribución por fuente de captación</div></div></div>
+    <div class="card"><div class="card-hd"><div>${tip(`Origen de leads — ${MESES[m]}`,"Distribución porcentual de leads según su fuente de captación (utm_source). Solo incluye registros con fuente identificada.")}<div class="card-su">Distribución por fuente de captación</div></div></div>
     <div class="cw h240"><canvas id="csrc" role="img" aria-label="Leads por origen"></canvas></div></div>
-    <div class="card"><div class="card-hd"><div><div class="card-ti">Detalle por fuente</div><div class="card-su">% sobre total con origen registrado (${srcTotal} leads)</div></div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Detalle por fuente","Ranking de fuentes con cantidad de leads, porcentaje del total y variación vs el mes anterior.")}<div class="card-su">% sobre total con origen registrado (${srcTotal} leads)</div></div></div>
     <div class="src-rows">`;
     ordSrc.forEach((k,i)=>{
       const cv=srcC[k]||0,pv=srcP[k]||0;
