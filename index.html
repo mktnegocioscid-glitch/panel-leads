@@ -187,6 +187,23 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .leg{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .leg-i{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .leg-d{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* RECLUTAMIENTO SPLIT BOXES */
+.rec-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.rec-box{border-radius:var(--r);padding:18px;border:1px solid}
+.rec-box-usa{background:linear-gradient(135deg,rgba(79,158,255,0.07),var(--card));border-color:rgba(79,158,255,0.3)}
+.rec-box-hisp{background:linear-gradient(135deg,rgba(0,229,160,0.07),var(--card));border-color:rgba(0,229,160,0.3)}
+.rec-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.rec-box-usa .rec-box-title{color:var(--blue)}
+.rec-box-hisp .rec-box-title{color:var(--green)}
+.rec-flag{font-size:16px}
+.rec-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rec-metric{background:rgba(0,0,0,0.2);border-radius:var(--rs);padding:10px 12px}
+.rec-metric .rl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);margin-bottom:4px}
+.rec-metric .rv{font-size:20px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.rec-box-usa .rv{color:var(--blue)}
+.rec-box-hisp .rv{color:var(--green)}
+.rec-metric .rb{margin-top:4px}
 </style>
 </head>
 <body>
@@ -211,7 +228,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
       </div>
     </div>
     <div class="sb-panel" id="tab-reclutamiento">
-      <div class="sb-placeholder">Próximamente<br>Sección en desarrollo</div>
+      <div id="sb-nav-rec"><div class="sb-placeholder">Cargando...</div></div>
     </div>
     <div class="sb-panel active" id="tab-presupuestos">
       <div id="sb-nav"></div>
@@ -222,11 +239,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
     <div class="ls-screen" id="ls"><div class="ls-ring"></div><p>Conectando con datos...</p></div>
     <div id="err-area" style="display:none"></div>
     <div id="dash" style="display:none"></div>
+    <div id="dash-rec" style="display:none"></div>
   </main>
 </div>
 
 <script>
 const CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQN5rVuxzaJ57hp_Zi25laMNpt0N3kfVWeTupvji8GoLiIYkMGc7aW9er6Fid136sOwdyaG8jXSnnSf/pub?gid=1605226695&single=true&output=csv';
+const CSV_REC='https://docs.google.com/spreadsheets/d/e/2PACX-1vQVnNyf_IrTIhuuK4yD5owjy_quJAEz1ra7eN7l8CavK4qhTFKn5a7pkPEEUlhmC1Qe4--sKkD3mv6m/pub?gid=1078433411&single=true&output=csv';
 const JOTFORM_URL='https://www.jotform.com/tables/231885007672662';
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MES3=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -245,6 +264,7 @@ const SRC_MAP = [
 const PAUTA_MATCH = /^(pauta|paid|paidmedia|paid[\s_-]?media|pauta[\s_-]?digital)$/i;
 
 let ALL=[], CHS=[], ACT='';
+let ALL_REC=[], CHS_REC=[], ACT_REC='';
 
 const TTP={backgroundColor:'#1c243a',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#a0aec0',bodyColor:'#f0f2f7',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8};
 
@@ -322,6 +342,40 @@ function getMonthKey(r){
   return d?mk(d):'';
 }
 function gRows(k){return ALL.filter(r=>getMonthKey(r)===k)}
+
+// ── RECLUTAMIENTO helpers ──
+// Detect English text (col4): checks for common English words absent in Spanish
+const EN_WORDS=/(the|and|that|have|for|not|with|you|this|but|from|they|would|make|like|into|could|very|good|great|love|want|work|team|help|grow|opportunity|travel|believe|passionate|excited|dedicated|motivated|hard|earn|income|financial|sales|customer|service|experience|skills|career|success|achieve|dream|family|support|independent|business|partner)/i;
+const ES_WORDS=/(que|por|para|con|una|los|las|del|esta|como|más|pero|sobre|todo|también|porque|cuando|desde|hasta|entre|tiene|hacer|quiero|poder|equipo|trabajo|familia|dinero|ingresos|viajes|ventas|oportunidad|crecimiento|motivado|apasionado|dedicado)/i;
+
+function isEnglish(text){
+  if(!text||text.trim().length<10)return false;
+  const enMatches=(text.match(EN_WORDS)||[]).length;
+  const esMatches=(text.match(ES_WORDS)||[]).length;
+  return enMatches>esMatches&&enMatches>=2;
+}
+function isUSA(r){
+  return (r[1]||'').trim().toLowerCase()==='united states' && isEnglish(r[4]||'');
+}
+function isHispanic(r){return !isUSA(r)}
+
+function gRowsRec(k){return ALL_REC.filter(r=>getMonthKeyRec(r)===k)}
+function getMonthKeyRec(r){
+  if(r._date)return mk(r._date);
+  const d=parseDate(r[0]);
+  return d?mk(d):'';
+}
+function getDateStrRec(r){
+  if(r._date)return ds(r._date);
+  const d=parseDate(r[0]);
+  return d?ds(d):'';
+}
+function gDayRec(rows){const m={};rows.forEach(r=>{const d=getDateStrRec(r);if(d)m[d]=(m[d]||0)+1});return m}
+function gCountryRec(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
+function gSrcRec(rows){const m={};rows.forEach(r=>{const k=normSrc(r[2]||'');if(k)m[k]=(m[k]||0)+1});return m}
+function gPautaRec(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
+function f15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d<cut})}
+function l15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);const end=new Date(y,m+1,0);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d>=cut&&d<=end})}
 function gDay(rows){const m={};rows.forEach(r=>{const d=getDateStr(r);if(d)m[d]=(m[d]||0)+1});return m}
 function gCountry(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
 function gSrc(rows){
@@ -343,6 +397,64 @@ function switchTab(name,btn){
   document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  // Toggle main content areas
+  document.getElementById('dash').style.display=name==='presupuestos'?'block':'none';
+  document.getElementById('dash-rec').style.display=name==='reclutamiento'?'block':'none';
+  // Load reclutamiento data on first switch
+  if(name==='reclutamiento'&&ALL_REC.length===0)loadRec();
+}
+
+function buildSBRec(){
+  const keys={};ALL_REC.forEach(r=>{const k=getMonthKeyRec(r);if(k)keys[k]=(keys[k]||0)+1});
+  const sorted=Object.keys(keys).sort().reverse();
+  const byY={};sorted.forEach(k=>{const y=k.slice(0,4);if(!byY[y])byY[y]=[];byY[y].push(k)});
+  const ck=curK();let html='';
+  Object.keys(byY).sort().reverse().forEach(y=>{
+    html+=`<div class="yr-group">
+      <button class="yr-toggle" onclick="toggleYear('rec-${y}',this)">
+        <span>${y}</span><span class="yr-arrow">▾</span>
+      </button>
+      <div class="yr-months" id="yr-rec-${y}">`;
+    byY[y].forEach(k=>{
+      const{m}=pk(k);const isc=k===ck;
+      html+=`<button class="mb-btn${k===ACT_REC?' active':''}${isc?' cur':''}" onclick="selMRec('${k}')"><span style="display:flex;align-items:center"><span class="mb-dot"></span>${MESES[m]}</span><span class="mc">${keys[k]}</span></button>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('sb-nav-rec').innerHTML=html||'<div class="sb-placeholder">Sin datos</div>';
+}
+
+function selMRec(k){
+  ACT_REC=k;
+  document.querySelectorAll('#sb-nav-rec .mb-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#sb-nav-rec .mb-btn').forEach(b=>{if(b.getAttribute('onclick')===`selMRec('${k}')`)b.classList.add('active')});
+  renderRec(k);
+  document.getElementById('main-content').scrollTop=0;
+}
+
+async function loadRec(){
+  document.getElementById('dash-rec').innerHTML='<div class="ls-screen"><div class="ls-ring"></div><p>Cargando reclutamiento...</p></div>';
+  try{
+    const r=await fetch(CSV_REC);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    Papa.parse(txt,{skipEmptyLines:true,complete:(res)=>{
+      const CUT=new Date('2025-01-01');
+      ALL_REC=res.data.filter((r,i)=>{
+        if(i===0)return false;
+        if(!r[0]||!String(r[0]).trim())return false;
+        const d=parseDate(r[0]);
+        if(!d||isNaN(d))return false;
+        r._date=d;
+        return d>=CUT;
+      });
+      buildSBRec();
+      if(!ACT_REC)ACT_REC=curK();
+      renderRec(ACT_REC);
+    }});
+  }catch(e){
+    document.getElementById('dash-rec').innerHTML=`<div class="err-box">⚠ ${e.message}</div>`;
+  }
 }
 
 let refreshTimer=null;
@@ -699,7 +811,260 @@ function buildReport(key,curR,prevR,lyR,o){
   </div>`;
 }
 
+
+function renderRec(key){
+  // destroy rec charts
+  CHS_REC.forEach(c=>{try{c.destroy()}catch(e){}});CHS_REC=[];
+  const{y,m}=pk(key);
+  const now=new Date();
+  const isNow=key===curK();
+  const todayStr=ds(now);
+  const todayN=now.getDate();
+  const curR=gRowsRec(key),pKey=prevK(key),prevR=gRowsRec(pKey),lyR=gRowsRec(lyK(key));
+  const{m:pm,y:py}=pk(pKey);
+  const prevMN=MESES[pm];
+  const daysInM=new Date(y,m+1,0).getDate(),daysInP=new Date(py,pm+1,0).getDate();
+  const maxD=isNow?todayN:daysInM;
+
+  // Split USA vs HISPANO
+  const usaR=curR.filter(isUSA), hispR=curR.filter(isHispanic);
+  const usaP=prevR.filter(isUSA), hispP=prevR.filter(isHispanic);
+
+  const leadsToday=isNow?curR.filter(r=>getDateStrRec(r)===todayStr).length:0;
+  const curUntil=isNow?curR.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d.getDate()<=todayN}).length:curR.length;
+  const prevUntil=prevR.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d.getDate()<=todayN}).length;
+  const avg=maxD>0?curR.length/maxD:0;
+
+  const f15c=f15Rec(curR,key).length,f15p=f15Rec(prevR,pKey).length;
+  const l15c=l15Rec(curR,key).length,l15p=l15Rec(prevR,pKey).length;
+
+  const ccC=gCountryRec(curR),ccP=gCountryRec(prevR);
+  const allCtry=[...new Set([...Object.keys(ccC),...Object.keys(ccP)])].sort((a,b)=>(ccC[b]||0)-(ccC[a]||0)).slice(0,12);
+  const growing=allCtry.filter(c=>ccC[c]&&ccP[c]&&ccC[c]>ccP[c]);
+  const declining=allCtry.filter(c=>ccC[c]&&ccP[c]&&ccC[c]<ccP[c]);
+  const newC=allCtry.filter(c=>ccC[c]&&!ccP[c]);
+
+  const srcC=gSrcRec(curR),srcP=gSrcRec(prevR);
+  const ordSrc=SRC_MAP.map(d=>d.key).filter(k=>srcC[k]>0||srcP[k]>0).sort((a,b)=>(srcC[b]||0)-(srcC[a]||0));
+  const srcTotal=ordSrc.reduce((s,k)=>s+(srcC[k]||0),0);
+  const pautaC=gPautaRec(curR),pautaP=gPautaRec(prevR);
+
+  const bdC=gDayRec(curR),bdP=gDayRec(prevR);
+  const dlabs=[],dcur=[],dprev=[];
+  for(let d2=1;d2<=maxD;d2++){
+    dlabs.push(d2);
+    dcur.push(bdC[ds(new Date(y,m,d2))]||0);
+    dprev.push(d2<=daysInP?(bdP[ds(new Date(py,pm,d2))]||0):null);
+  }
+  const l12k=last12(key),l12v=l12k.map(k=>gRowsRec(k).length);
+  const l12l=l12k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+  const dm=dlt(curR.length,prevR.length);
+
+  // ── BUILD HTML ──
+  let h=`<div class="ph">
+    <div>
+      <div class="ph-title">${MESES[m]} ${y} ${isNow?'<span class="cur-tag">Mes actual</span>':''}</div>
+      <div class="ph-sub">${curR.length} postulantes · vs ${prevMN} ${py}${lyR.length?' · '+MESES[m]+' '+(y-1)+': '+lyR.length:''}</div>
+    </div>
+  </div>`;
+
+  // Insights
+  h+=`<div class="insights">`;
+  if(isNow&&leadsToday>0)h+=`<div class="ins ins-info">Hoy: ${leadsToday} postulante${leadsToday!==1?'s':''}</div>`;
+  if(dm!==null)h+=`<div class="ins ${dm>=0?'ins-up':'ins-dn'}">${dm>=0?'▲':'▼'} ${Math.abs(dm)}% vs ${prevMN}</div>`;
+  if(growing.length)h+=`<div class="ins ins-up">↑ ${growing.slice(0,3).join(', ')}</div>`;
+  if(declining.length)h+=`<div class="ins ins-dn">↓ ${declining.slice(0,2).join(', ')}</div>`;
+  h+=`</div>`;
+
+  // USA vs HISPANO split boxes
+  h+=`<div class="rec-split">
+    <div class="rec-box rec-box-usa">
+      <div class="rec-box-title"><span class="rec-flag">🇺🇸</span> Geral — USA</div>
+      <div class="rec-metrics">
+        <div class="rec-metric"><div class="rl">Este mes</div><div class="rv">${usaR.length}</div><div class="rb">${bdg(dlt(usaR.length,usaP.length),prevMN)}</div></div>
+        <div class="rec-metric"><div class="rl">${isNow?'Hoy':'Promedio'}</div><div class="rv">${isNow?usaR.filter(r=>getDateStrRec(r)===todayStr).length:(maxD>0?(usaR.length/maxD).toFixed(1):0)}</div></div>
+      </div>
+    </div>
+    <div class="rec-box rec-box-hisp">
+      <div class="rec-box-title"><span class="rec-flag">🌎</span> Bea — Hispanos</div>
+      <div class="rec-metrics">
+        <div class="rec-metric"><div class="rl">Este mes</div><div class="rv">${hispR.length}</div><div class="rb">${bdg(dlt(hispR.length,hispP.length),prevMN)}</div></div>
+        <div class="rec-metric"><div class="rl">${isNow?'Hoy':'Promedio'}</div><div class="rv">${isNow?hispR.filter(r=>getDateStrRec(r)===todayStr).length:(maxD>0?(hispR.length/maxD).toFixed(1):0)}</div></div>
+      </div>
+    </div>
+  </div>`;
+
+  // KPIs generales
+  h+=`<div class="kpi-row">`;
+  if(isNow){
+    const prevTL=prevR.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d.getDate()===todayN}).length;
+    h+=`<div class="kpi feat-blue"><div class="kpi-lbl">Postulantes hoy</div><div class="kpi-val">${leadsToday}</div>${bdg(dlt(leadsToday,prevTL),'mismo día '+prevMN)}</div>`;
+  }
+  h+=`<div class="kpi feat-green"><div class="kpi-lbl">Total mes</div><div class="kpi-val">${curR.length}</div>${bdg(dm,prevMN)}</div>`;
+  if(isNow)h+=`<div class="kpi"><div class="kpi-lbl">Hasta día ${todayN}</div><div class="kpi-val plain">${curUntil}</div>${bdg(dlt(curUntil,prevUntil),prevMN)}</div>`;
+  h+=`<div class="kpi"><div class="kpi-lbl">Promedio / día</div><div class="kpi-val plain">${avg.toFixed(1)}</div><span class="badge b-info">post/día</span></div>`;
+  h+=`<div class="kpi"><div class="kpi-lbl">Países activos</div><div class="kpi-val plain">${Object.keys(ccC).length}</div>${newC.length?'<span class="badge b-up">+'+newC.length+' nuevos</span>':'<span class="badge b-neu">—</span>'}</div>`;
+  if(pautaC>0||pautaP>0)h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Por pauta</div><div class="kpi-val">${pautaC}</div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;
+  if(lyR.length)h+=`<div class="kpi"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
+  h+=`</div>`;
+
+  // Quincenas
+  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (1–15 y 16–fin) y compara con el mismo período del mes anterior.")}</div></div>
+    <div class="qg">
+      <div class="qcard"><div class="qlbl">Primera quincena (1–15)</div><div class="qvals"><span class="qcur">${f15c}</span><span class="qprev">vs ${f15p} en ${prevMN}</span></div>${bdg(dlt(f15c,f15p),prevMN)}</div>
+      <div class="qcard"><div class="qlbl">Segunda quincena (16–fin)</div><div class="qvals"><span class="qcur">${l15c}</span><span class="qprev">vs ${l15p} en ${prevMN}</span></div>${bdg(dlt(l15c,l15p),prevMN)}</div>
+    </div></div></div>`;
+
+  // Diario
+  h+=`<div class="gr g1"><div class="card">
+    <div class="card-hd">
+      <div>${tip("Postulantes por día","Cantidad de postulantes por día. La línea punteada es el mes anterior.")}</div>
+      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
+    </div>
+    <div class="cw h210"><canvas id="rcdaily" role="img" aria-label="Postulantes por día"></canvas></div>
+  </div></div>`;
+
+  // 12 meses + países
+  h+=`<div class="gr g2">
+    <div class="card"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de postulantes.")}</div></div><div class="cw h210"><canvas id="rcmonth" role="img" aria-label="Postulantes por mes"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Postulantes por país","Verde ↑ crecimiento · Rojo ↓ caída · Azul = nuevo vs ${prevMN}")}</div></div><div class="cw h210"><canvas id="rcctry" role="img" aria-label="Postulantes por país"></canvas></div></div>
+  </div>`;
+
+  // Tabla países
+  if(allCtry.length){
+    const maxV=Math.max(...allCtry.map(c=>ccC[c]||0),1);
+    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking de países de nacimiento con variación vs mes anterior.")}</div></div>
+    <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Tendencia</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
+    <div class="ct-rows">`;
+    allCtry.forEach((c,i)=>{
+      const cv=ccC[c]||0,pv=ccP[c]||0,d2=pv?dlt(cv,pv):null;
+      const bc=d2===null?'#4f9eff':d2>0?'#00e5a0':'#ff4d72';
+      h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
+    });
+    h+=`</div></div></div>`;
+  }
+
+  // Origen
+  if(ordSrc.length>0){
+    const srcMaxV=Math.max(...ordSrc.map(k=>srcC[k]||0),1);
+    h+=`<div class="gr g2">
+    <div class="card"><div class="card-hd"><div>${tip("Origen de postulantes","Distribución por fuente de captación (utm_source).")}</div></div>
+    <div class="cw h240"><canvas id="rcsrc" role="img" aria-label="Postulantes por fuente"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Detalle por fuente","% sobre total con fuente registrada.")}</div></div>
+    <div class="src-rows">`;
+    ordSrc.forEach((k,i)=>{
+      const cv=srcC[k]||0,pv=srcP[k]||0;
+      const pct=srcTotal>0?Math.round(cv/srcTotal*100):0;
+      h+=`<div class="src-row">
+        <div class="src-name">${srcLabel(k)}</div>
+        <div class="src-bw"><div class="src-b" style="width:${Math.round(cv/srcMaxV*100)}%;background:${PAL[i%PAL.length]}"></div></div>
+        <div class="src-pct">${pct}%</div>
+        <div class="src-n">${cv}</div>
+        <div class="src-delta ${dc(pv?dlt(cv,pv):null)}">${dt(pv?dlt(cv,pv):null)}</div>
+      </div>`;
+    });
+    h+=`</div></div></div>`;
+  }
+
+  // Reporte
+  h+=buildReportRec(key,curR,prevR,lyR,usaR,hispR,{isNow,todayN,leadsToday,prevMN,py,y,m,f15c,f15p,l15c,l15p,allCtry,ccC,ccP,growing,declining,newC,ordSrc,srcC,srcTotal,pautaC,pautaP,avg,dm});
+
+  document.getElementById('dash-rec').innerHTML=h;
+
+  // CHARTS
+  function mkRC(id,cfg){const el=document.getElementById(id);if(!el)return;const ch=new Chart(el.getContext('2d'),cfg);CHS_REC.push(ch)}
+
+  mkRC('rcdaily',{type:'bar',data:{labels:dlabs,datasets:[
+    {label:MESES[m],data:dcur,backgroundColor:'rgba(0,229,160,0.15)',borderColor:'#00e5a0',borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1},
+    {label:prevMN,data:dprev,type:'line',borderColor:'rgba(90,110,138,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,order:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
+    x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',maxRotation:0}},
+    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
+  }}});
+
+  const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
+  mkRC('rcmonth',{type:'bar',data:{labels:l12l,datasets:[{label:'Postulantes',data:l12v,backgroundColor:l12c,borderColor:l12b,borderWidth:1,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
+    x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',autoSkip:false,maxRotation:45}},
+    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
+  }}});
+
+  if(allCtry.length){
+    const tc=allCtry.slice(0,10);
+    const bgs=tc.map(c=>{const cv=ccC[c]||0,pv=ccP[c]||0;return!pv?'rgba(79,158,255,0.18)':cv>pv?'rgba(0,229,160,0.18)':'rgba(255,77,114,0.18)'});
+    const bds=tc.map(c=>{const cv=ccC[c]||0,pv=ccP[c]||0;return!pv?'#4f9eff':cv>pv?'#00e5a0':'#ff4d72'});
+    mkRC('rcctry',{type:'bar',data:{labels:tc,datasets:[
+      {label:MESES[m],data:tc.map(c=>ccC[c]||0),backgroundColor:bgs,borderColor:bds,borderWidth:1.5,borderRadius:3,borderSkipped:false},
+      {label:prevMN,data:tc.map(c=>ccP[c]||0),backgroundColor:'rgba(90,110,138,0.15)',borderColor:'rgba(90,110,138,0.4)',borderWidth:1,borderRadius:3,borderSkipped:false}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
+      x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',maxRotation:35,autoSkip:false}},
+      y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
+    }}});
+  }
+
+  if(ordSrc.length>0){
+    const srcColors=ordSrc.map((_,i)=>PAL[i%PAL.length]);
+    mkRC('rcsrc',{type:'doughnut',data:{
+      labels:ordSrc.map(srcLabel),
+      datasets:[{data:ordSrc.map(k=>srcC[k]||0),backgroundColor:srcColors.map(c=>c+'2a'),borderColor:srcColors,borderWidth:2,hoverOffset:5}]
+    },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
+      legend:{display:true,position:'right',labels:{font:{size:11,family:'Inter'},color:'#e2e8f0',boxWidth:10,padding:10,
+        generateLabels:(chart)=>{
+          const d=chart.data;
+          return d.labels.map((lbl,i)=>{
+            const val=d.datasets[0].data[i];
+            const pct=srcTotal>0?Math.round(val/srcTotal*100):0;
+            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i,fontColor:'#e2e8f0'};
+          });
+        }
+      }},tooltip:TTP
+    }}});
+  }
+}
+
+function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
+  const{isNow,todayN,leadsToday,prevMN,py,y,m,f15c,f15p,l15c,l15p,allCtry,ccC,ccP,growing,declining,newC,ordSrc,srcC,srcTotal,pautaC,pautaP,avg,dm}=o;
+  const total=curR.length,prevTotal=prevR.length,dmAbs=Math.abs(dm||0);
+  const df15=dlt(f15c,f15p),dl15=dlt(l15c,l15p);
+  let ps=[];
+
+  let p1=isNow
+    ?`En lo que va de <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `
+    :`Durante <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con promedio de <strong>${avg.toFixed(1)} por día</strong>. `;
+  if(dm!==null)p1+=dm>0?`Representa un <span class="rg">crecimiento del ${dmAbs}%</span> vs ${prevMN}. `:dm<0?`Implica una <span class="rr">caída del ${dmAbs}%</span> vs ${prevMN}. `:`Volumen estable respecto a ${prevMN}. `;
+  p1+=`De estas, <strong>${usaR.length} corresponden a USA (Geral)</strong> y <strong>${hispR.length} a Hispanos (Bea)</strong>.`;
+  ps.push(p1);
+
+  let p2=`Por quincena: primera mitad <strong>${f15c} postulaciones</strong>`;
+  if(f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  p2+=`; segunda mitad <strong>${l15c}</strong>`;
+  if(l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span>)`:dl15<0?` (<span class="rr">${dl15}%</span>)`:`(estable)`;
+  p2+='.';
+  ps.push(p2);
+
+  if(allCtry.length){
+    const topC=allCtry[0],topV=ccC[topC]||0,topP=ccP[topC]||0,topD=dlt(topV,topP);
+    let p3=`El principal país de origen fue <strong>${topC}</strong> con <strong>${topV} postulaciones</strong>`;
+    if(topP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
+    p3+='. ';
+    if(growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
+    if(declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
+    ps.push(p3);
+  }
+
+  if(ordSrc.length&&srcTotal>0){
+    const top=ordSrc[0],topV=srcC[top]||0,topPct=Math.round(topV/srcTotal*100);
+    let p4=`La principal fuente de captación fue <strong>${srcLabel(top)}</strong> con <strong>${topV} postulaciones (${topPct}%)</strong>. `;
+    if(pautaC>0){const pp=pautaP?dlt(pautaC,pautaP):null;p4+=`Postulaciones por pauta: <strong>${pautaC}</strong>${pp!==null?` (${pp>=0?'<span class="rg">+'+pp+'%</span>':'<span class="rr">'+pp+'%</span>'} vs ${prevMN})`:''}. `}
+    ps.push(p4);
+  }
+
+  return `<div class="report">
+    <div class="report-ti">Reporte ejecutivo — ${MESES[m]} ${y}</div>
+    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}</div>
+  </div>`;
+}
+
 doRefresh();
-</script>
+
 </body>
 </html>
