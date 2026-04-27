@@ -896,7 +896,7 @@ function renderMonth(key){
   h+=`<div class="gr g1"><div class="card">
     <div class="card-hd">
       <div>${tip("Leads por día del mes","Muestra cuántos leads se captaron cada día. La línea punteada representa el mes anterior para comparación visual.")}<div class="card-su">${MESES[m]} ${y} vs ${prevMN} ${py}</div></div>
-      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
+      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
     </div>
     <div class="cw h210"><canvas id="cdaily" role="img" aria-label="Leads por día"></canvas></div>
   </div></div>`;
@@ -914,7 +914,7 @@ function renderMonth(key){
     const last6k=last12(key).slice(-6);
     const last6pautaV=last6k.map(k=>gRows(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
     const last6l=last6k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
-    h+=`<div class="gr g2"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
+    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
     <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
     <div class="ct-rows">`;
     allCtry.forEach((c,i)=>{
@@ -924,11 +924,13 @@ function renderMonth(key){
       const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
       h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
     });
-    h+=`</div></div>
-    <div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de leads captados a través de pauta en los últimos 6 meses.")}</div></div>
-    <div class="cw h240"><canvas id="cpautabars" role="img" aria-label="Leads por pauta últimos 6 meses"></canvas></div>
-    </div></div>`;
+    h+=`</div></div></div>`;
   }
+
+  // Pauta evolution chart — always shown
+  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de leads captados a través de pauta en los últimos 6 meses.")}</div></div>
+  <div class="cw h200"><canvas id="cpautabars" role="img" aria-label="Leads por pauta últimos 6 meses"></canvas></div>
+  </div></div>`;
 
   // Origen de leads
   if(ordSrc.length>0){
@@ -993,7 +995,7 @@ function renderMonth(key){
     {label:'Pauta',data:dcurPauta,backgroundColor:'rgba(255,77,114,0.55)',borderColor:'#ff4d72',borderWidth:1,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:MESES[m],data:dcurOrg,backgroundColor:dailyBgColors,borderColor:dailyBdColors,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:prevMN,data:dprev,type:'line',borderColor:'rgba(90,110,138,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,order:0}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',align:'end',labels:{font:{size:11,family:'Inter'},color:()=>document.body.classList.contains('light')?'#111':'#e2e8f0',boxWidth:10,boxHeight:10,padding:12,}},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
     tooltip:{...TTP,mode:'index',intersect:false,callbacks:{
       title:(items)=>{
         const idx=items[0].dataIndex;
@@ -1287,7 +1289,7 @@ function renderRec(key){
   h+=`<div class="gr g1"><div class="card">
     <div class="card-hd">
       <div>${tip("Postulantes por día del mes","Muestra cuántas postulaciones se recibieron cada día. La barra verde es el mes actual y la línea punteada representa el mes anterior para comparación visual día a día.")}</div>
-      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
+      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
     </div>
     <div class="cw h210"><canvas id="rcdaily" role="img" aria-label="Postulantes por día"></canvas></div>
   </div></div>`;
@@ -1301,7 +1303,7 @@ function renderRec(key){
   // Tabla países
   if(allCtry.length){
     const maxV=Math.max(...allCtry.map(c=>ccC[c]||0),1);
-    h+=`<div class="gr g2"><div class="card"><div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior. Ayuda a identificar los mercados con mayor y menor actividad.")}</div></div>
+    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior. Ayuda a identificar los mercados con mayor y menor actividad.")}</div></div>
     <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
     <div class="ct-rows">`;
     allCtry.forEach((c,i)=>{
@@ -1311,11 +1313,13 @@ function renderRec(key){
       const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
       h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
     });
-    h+=`</div></div>
-    <div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de postulaciones captadas a través de pauta en los últimos 6 meses.")}</div></div>
-    <div class="cw h240"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta últimos 6 meses"></canvas></div>
-    </div></div>`;
+    h+=`</div></div></div>`;
   }
+
+  // Pauta evolution chart reclutamiento — always shown
+  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de postulaciones captadas a través de pauta en los últimos 6 meses.")}</div></div>
+  <div class="cw h200"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta últimos 6 meses"></canvas></div>
+  </div></div>`;
 
   // Origen
   if(ordSrc.length>0){
@@ -1392,7 +1396,7 @@ function renderRec(key){
     {label:'Pauta',data:dcurRPauta,backgroundColor:'rgba(255,77,114,0.55)',borderColor:'#ff4d72',borderWidth:1,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:MESES[m],data:dcurROrg,backgroundColor:recDailyBg,borderColor:recDailyBd,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:prevMN,data:dprev,type:'line',borderColor:'rgba(90,110,138,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,order:0}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',align:'end',labels:{font:{size:11,family:'Inter'},color:()=>document.body.classList.contains('light')?'#111':'#e2e8f0',boxWidth:10,boxHeight:10,padding:12,}},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
     tooltip:{...TTP,mode:'index',intersect:false,callbacks:{
       title:(items)=>{
         const idx=items[0].dataIndex;
