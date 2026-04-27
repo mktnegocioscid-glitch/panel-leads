@@ -1036,18 +1036,18 @@ function renderMonth(key){
 
   if(ordSrc.length>0){
     const srcColors=ordSrc.map((_,i)=>PAL[i%PAL.length]);
+    const legColor=document.body.classList.contains('light')?'#111':'#ffffff';
     mkC('csrc',{type:'doughnut',data:{
       labels:ordSrc.map(srcLabel),
       datasets:[{data:ordSrc.map(k=>srcC[k]||0),backgroundColor:srcColors.map(c=>c+'2a'),borderColor:srcColors,borderWidth:2,hoverOffset:5}]
     },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
-      legend:{display:true,position:'right',labels:{font:{size:12,family:'Inter',weight:'600'},color:()=>document.body.classList.contains('light')?'#111':'#fff',boxWidth:12,padding:12,
+      legend:{display:true,position:'right',labels:{font:{size:12,family:'Inter',weight:'600'},color:legColor,boxWidth:12,padding:12,
         generateLabels:(chart)=>{
           const d=chart.data;
-          const legendColor=document.body.classList.contains('light')?'#111':'#fff';
           return d.labels.map((lbl,i)=>{
             const val=d.datasets[0].data[i];
             const pct=srcTotal>0?Math.round(val/srcTotal*100):0;
-            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i,fontColor:legendColor};
+            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i,fontColor:legColor};
           });
         }
       }},
@@ -1413,18 +1413,19 @@ function renderRec(key){
 
   if(ordSrc.length>0){
     const srcColors=ordSrc.map((_,i)=>PAL[i%PAL.length]);
+  const rcLegColor=document.body.classList.contains('light')?'#111':'#ffffff';
     mkRC('rcsrc',{type:'doughnut',data:{
       labels:ordSrc.map(srcLabel),
       datasets:[{data:ordSrc.map(k=>srcC[k]||0),backgroundColor:srcColors.map(c=>c+'2a'),borderColor:srcColors,borderWidth:2,hoverOffset:5}]
     },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
     plugins:{
-      legend:{display:true,position:'right',labels:{font:{size:12,family:'Inter',weight:'600'},color:()=>document.body.classList.contains('light')?'#111':'#fff',boxWidth:12,padding:12,
+      legend:{display:true,position:'right',labels:{font:{size:12,family:'Inter',weight:'600'},color:rcLegColor,boxWidth:12,padding:12,
         generateLabels:(chart)=>{
           const d=chart.data;
           return d.labels.map((lbl,i)=>{
             const val=d.datasets[0].data[i];
             const pct=srcTotal>0?Math.round(val/srcTotal*100):0;
-            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i};
+            return{text:`${lbl}  ${pct}%`,fillStyle:srcColors[i],strokeStyle:srcColors[i],lineWidth:2,hidden:false,index:i,fontColor:rcLegColor};
           });
         }
       }},
