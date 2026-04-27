@@ -953,7 +953,7 @@ function renderMonth(key){
 
   // CHARTS
   // Build per-day source breakdown + day names + weekend detection
-  const daySrcMap={};
+  const daySrcMap={}, dayPautaMap={};
   const DIAS_CORTO=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const DIAS_FULL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   curR.forEach(r=>{
@@ -962,6 +962,7 @@ function renderMonth(key){
     const src=normSrc(r[2]||'');
     if(!daySrcMap[dateKey])daySrcMap[dateKey]={};
     if(src)daySrcMap[dateKey][src]=(daySrcMap[dateKey][src]||0)+1;
+    if(normCampaign(r[3]||'')==='pauta')dayPautaMap[dateKey]=(dayPautaMap[dateKey]||0)+1;
   });
 
   // Per-day colors: weekend = amber, weekday = green
@@ -978,41 +979,45 @@ function renderMonth(key){
     return(dow===0||dow===6)?`${DIAS_CORTO[dow]} ${d}`:String(d);
   });
 
+  const dcurPauta=dlabs.map(d=>dayPautaMap[ds(new Date(y,m,d))]||0);
+  const dcurOrg=dlabs.map((d,i)=>Math.max(0,dcur[i]-dcurPauta[i]));
+
   mkC('cdaily',{type:'bar',data:{labels:dailyXLabels,datasets:[
-    {label:MESES[m],data:dcur,backgroundColor:dailyBgColors,borderColor:dailyBdColors,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1},
+    {label:'Pauta',data:dcurPauta,backgroundColor:'rgba(255,77,114,0.55)',borderColor:'#ff4d72',borderWidth:1,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
+    {label:MESES[m],data:dcurOrg,backgroundColor:dailyBgColors,borderColor:dailyBdColors,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:prevMN,data:dprev,type:'line',borderColor:'rgba(90,110,138,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,order:0}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-    tooltip:{...TTP,callbacks:{
+    tooltip:{...TTP,mode:'index',intersect:false,callbacks:{
       title:(items)=>{
         const idx=items[0].dataIndex;
         const d=dlabs[idx];
-        const date=new Date(y,m,d);
-        return `${DIAS_FULL[date.getDay()]} ${d} — ${MESES[m]} ${y}`;
+        return `${DIAS_FULL[new Date(y,m,d).getDay()]} ${d} — ${MESES[m]} ${y}`;
       },
       label:(item)=>{
         if(item.dataset.type==='line')return `${prevMN}: ${item.raw??0}`;
+        if(item.dataset.label==='Pauta'){
+          const v=item.raw||0;
+          return v>0?`  Pauta: ${v}`:null;
+        }
         const idx=item.dataIndex;
         const dayDate=ds(new Date(y,m,dlabs[idx]));
-        const total=item.raw||0;
+        const total=dcur[idx]||0;
         const srcs=daySrcMap[dayDate]||{};
+        const pautaV=dcurPauta[idx]||0;
         const lines=[`Total: ${total}`];
-        SRC_MAP.forEach(def=>{
-          const v=srcs[def.key]||0;
-          if(v>0)lines.push(`  ${def.label}: ${v}`);
-        });
-        Object.keys(srcs).forEach(k=>{
-          if(!SRC_MAP.find(d=>d.key===k)&&srcs[k]>0)lines.push(`  Otros: ${srcs[k]}`);
-        });
+        if(pautaV>0)lines.push(`  Pauta: ${pautaV}`);
+        SRC_MAP.forEach(def=>{const v=srcs[def.key]||0;if(v>0)lines.push(`  ${def.label}: ${v}`)});
         return lines;
-      }
+      },
+      filter:(item)=>item.dataset.label!=='Pauta'
     }}
   },scales:{
-    x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:(ctx)=>{
+    x:{grid:{display:false},border:{display:false},stacked:true,ticks:{font:{size:9,family:'JetBrains Mono'},color:(ctx)=>{
       const idx=ctx.index;
       const dow=new Date(y,m,dlabs[idx]).getDay();
       return(dow===0||dow===6)?'#f5a623':'#5a6e8a';
     },maxRotation:0}},
-    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
+    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},stacked:true,ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
   }}});
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
@@ -1328,7 +1333,7 @@ function renderRec(key){
   }
 
   // Build per-day source + geral/bea breakdown for reclutamiento tooltip
-  const recDaySrcMap={}, recDayGeralMap={}, recDayBeaMap={};
+  const recDaySrcMap={}, recDayGeralMap={}, recDayBeaMap={}, recDayPautaMap={};
   const REC_DIAS_CORTO=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const REC_DIAS_FULL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   curR.forEach(r=>{
@@ -1339,6 +1344,7 @@ function renderRec(key){
     if(src)recDaySrcMap[dateKey][src]=(recDaySrcMap[dateKey][src]||0)+1;
     if(isUSA(r))recDayGeralMap[dateKey]=(recDayGeralMap[dateKey]||0)+1;
     else recDayBeaMap[dateKey]=(recDayBeaMap[dateKey]||0)+1;
+    if(normCampaign(r[3]||'')==='pauta')recDayPautaMap[dateKey]=(recDayPautaMap[dateKey]||0)+1;
   });
 
   // Weekend colors for rec chart
@@ -1355,41 +1361,45 @@ function renderRec(key){
     return(dow===0||dow===6)?`${REC_DIAS_CORTO[dow]} ${d}`:String(d);
   });
 
+  const dcurRPauta=dlabs.map(d=>recDayPautaMap[ds(new Date(y,m,d))]||0);
+  const dcurROrg=dlabs.map((d,i)=>Math.max(0,dcur[i]-dcurRPauta[i]));
+
   mkRC('rcdaily',{type:'bar',data:{labels:recDailyLabels,datasets:[
-    {label:MESES[m],data:dcur,backgroundColor:recDailyBg,borderColor:recDailyBd,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1},
+    {label:'Pauta',data:dcurRPauta,backgroundColor:'rgba(255,77,114,0.55)',borderColor:'#ff4d72',borderWidth:1,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
+    {label:MESES[m],data:dcurROrg,backgroundColor:recDailyBg,borderColor:recDailyBd,borderWidth:1.5,borderRadius:3,borderSkipped:false,order:1,stack:'cur'},
     {label:prevMN,data:dprev,type:'line',borderColor:'rgba(90,110,138,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,order:0}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-    tooltip:{...TTP,callbacks:{
+    tooltip:{...TTP,mode:'index',intersect:false,callbacks:{
       title:(items)=>{
         const idx=items[0].dataIndex;
         const d=dlabs[idx];
-        const date=new Date(y,m,d);
-        return `${REC_DIAS_FULL[date.getDay()]} ${d} — ${MESES[m]} ${y}`;
+        return `${REC_DIAS_FULL[new Date(y,m,d).getDay()]} ${d} — ${MESES[m]} ${y}`;
       },
       label:(item)=>{
         if(item.dataset.type==='line')return `${prevMN}: ${item.raw??0}`;
+        if(item.dataset.label==='Pauta')return null;
         const idx=item.dataIndex;
         const dayDate=ds(new Date(y,m,dlabs[idx]));
-        const total=item.raw||0;
+        const total=dcur[idx]||0;
         const srcs=recDaySrcMap[dayDate]||{};
         const geral=recDayGeralMap[dayDate]||0;
         const bea=recDayBeaMap[dayDate]||0;
+        const pautaV=dcurRPauta[idx]||0;
         const lines=[`Total: ${total}`,`  🇺🇸 Geral: ${geral}`,`  🌎 Bea: ${bea}`];
+        if(pautaV>0)lines.push(`  Pauta: ${pautaV}`);
         if(Object.keys(srcs).length>0)lines.push('—');
-        SRC_MAP.forEach(def=>{
-          const v=srcs[def.key]||0;
-          if(v>0)lines.push(`  ${def.label}: ${v}`);
-        });
+        SRC_MAP.forEach(def=>{const v=srcs[def.key]||0;if(v>0)lines.push(`  ${def.label}: ${v}`)});
         return lines;
-      }
+      },
+      filter:(item)=>item.dataset.label!=='Pauta'
     }}
   },scales:{
-    x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:(ctx)=>{
+    x:{grid:{display:false},border:{display:false},stacked:true,ticks:{font:{size:9,family:'JetBrains Mono'},color:(ctx)=>{
       const idx=ctx.index;
       const dow=new Date(y,m,dlabs[idx]).getDay();
       return(dow===0||dow===6)?'#f5a623':'#5a6e8a';
     },maxRotation:0}},
-    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
+    y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},stacked:true,ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
   }}});
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
