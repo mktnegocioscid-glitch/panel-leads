@@ -910,7 +910,11 @@ function renderMonth(key){
   // Tabla países
   if(allCtry.length){
     const maxV=Math.max(...allCtry.map(c=>ccC[c]||0),1);
-    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
+    // Last 6 months pauta data
+    const last6k=last12(key).slice(-6);
+    const last6pautaV=last6k.map(k=>gRows(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
+    const last6l=last6k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    h+=`<div class="gr g2"><div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
     <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
     <div class="ct-rows">`;
     allCtry.forEach((c,i)=>{
@@ -920,7 +924,10 @@ function renderMonth(key){
       const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
       h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
     });
-    h+=`</div></div></div>`;
+    h+=`</div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de leads captados a través de pauta en los últimos 6 meses.")}</div></div>
+    <div class="cw h240"><canvas id="cpautabars" role="img" aria-label="Leads por pauta últimos 6 meses"></canvas></div>
+    </div></div>`;
   }
 
   // Origen de leads
@@ -1021,6 +1028,20 @@ function renderMonth(key){
   }}});
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
+
+  // Pauta bars chart — last 6 months
+  if(document.getElementById('cpautabars')){
+    const last6k=last12(key).slice(-6);
+    const last6pautaV=last6k.map(k=>gRows(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
+    const last6l=last6k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const pb6c=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
+    const pb6b=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
+    mkC('cpautabars',{type:'bar',data:{labels:last6l,datasets:[{label:'Pauta',data:last6pautaV,backgroundColor:pb6c,borderColor:pb6b,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+  }
+
   mkC('cmonth',{type:'bar',data:{labels:l12l,datasets:[{label:'Leads',data:l12v,backgroundColor:l12c,borderColor:l12b,borderWidth:1,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
     x:{grid:{display:false},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',autoSkip:false,maxRotation:45}},
     y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
@@ -1280,7 +1301,7 @@ function renderRec(key){
   // Tabla países
   if(allCtry.length){
     const maxV=Math.max(...allCtry.map(c=>ccC[c]||0),1);
-    h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior. Ayuda a identificar los mercados con mayor y menor actividad.")}</div></div>
+    h+=`<div class="gr g2"><div class="card"><div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior. Ayuda a identificar los mercados con mayor y menor actividad.")}</div></div>
     <div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div>
     <div class="ct-rows">`;
     allCtry.forEach((c,i)=>{
@@ -1290,7 +1311,10 @@ function renderRec(key){
       const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
       h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
     });
-    h+=`</div></div></div>`;
+    h+=`</div></div>
+    <div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de postulaciones captadas a través de pauta en los últimos 6 meses.")}</div></div>
+    <div class="cw h240"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta últimos 6 meses"></canvas></div>
+    </div></div>`;
   }
 
   // Origen
@@ -1401,6 +1425,19 @@ function renderRec(key){
     },maxRotation:0}},
     y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},stacked:true,ticks:{font:{size:9,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}
   }}});
+
+  // Pauta bars chart reclutamiento
+  if(document.getElementById('rcpautabars')){
+    const last6kr=last12(key).slice(-6);
+    const last6pautaR=last6kr.map(k=>gRowsRec(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
+    const last6lr=last6kr.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const pbrc=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
+    const pbrb=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
+    mkRC('rcpautabars',{type:'bar',data:{labels:last6lr,datasets:[{label:'Pauta',data:last6pautaR,backgroundColor:pbrc,borderColor:pbrb,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+  }
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
   mkRC('rcmonth',{type:'bar',data:{labels:l12l,datasets:[{label:'Postulantes',data:l12v,backgroundColor:l12c,borderColor:l12b,borderWidth:1,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
