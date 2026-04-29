@@ -910,26 +910,29 @@ function renderMonth(key){
   // Tabla países + pauta chart lado a lado
   {
     const maxV=allCtry.length?Math.max(...allCtry.map(c=>ccC[c]||0),1):1;
-    h+=`<div class="gr g1">`;
-    h+=`<div class="card"><div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>`;
+    // Build country table HTML
+    let ctryHTML=`<div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div><div class="ct-rows">`;
     if(allCtry.length){
-      h+=`<div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div><div class="ct-rows">`;
       allCtry.forEach((c,i)=>{
         const cv=ccC[c]||0,pv=ccP[c]||0,d2=pv?dlt(cv,pv):null;
         const bc=d2===null?'#4f9eff':d2>0?'#00e5a0':'#ff4d72';
         const trendIcon=d2===null?'':d2>0?'↑':d2<0?'↓':'=';
         const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
-        h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
+        ctryHTML+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
       });
-      h+=`</div>`;
-    }else{h+=`<div class="empty">Sin datos de países este mes</div>`;}
-    h+=`</div>`;
-    h+=`</div>`;
+    }else{ctryHTML+=`<div class="empty">Sin datos</div>`;}
+    ctryHTML+=`</div>`;
+    h+=`<div class="gr g2">
+      <div class="card">
+        <div class="card-hd"><div>${tip("Detalle por país","Ranking completo de países con cantidad de leads del mes actual y variación porcentual respecto al mes anterior.")}<div class="card-su">${MESES[m]} vs ${prevMN}</div></div></div>
+        ${ctryHTML}
+      </div>
+      <div class="card">
+        <div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de leads captados a través de pauta en los últimos 6 meses.")}</div></div>
+        <div class="cw h200"><canvas id="cpautabars" role="img" aria-label="Leads por pauta últimos 6 meses"></canvas></div>
+      </div>
+    </div>`;
   }
-  // Leads por pauta — full width below país
-  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución mensual de leads captados a través de pauta en los últimos 6 meses.")}</div></div>
-  <div class="cw h180"><canvas id="cpautabars" role="img" aria-label="Leads por pauta últimos 6 meses"></canvas></div>
-  </div></div>`;
 
   // Origen de leads
   if(ordSrc.length>0){
@@ -1303,25 +1306,28 @@ function renderRec(key){
     // Tabla países + pauta chart lado a lado — reclutamiento
   {
     const maxV=allCtry.length?Math.max(...allCtry.map(c=>ccC[c]||0),1):1;
-    h+=`<div class="gr g1">`;
-    h+=`<div class="card"><div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior.")}</div></div>`;
+    let ctryHTMLr=`<div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div><div class="ct-rows">`;
     if(allCtry.length){
-      h+=`<div class="ct-hdr"><div class="ct-hcell">#</div><div class="ct-hcell">País</div><div class="ct-hcell" style="text-align:left">Barra</div><div class="ct-hcell">Tend.</div><div class="ct-hcell">${MES3[m]}</div><div class="ct-hcell">Δ%</div></div><div class="ct-rows">`;
       allCtry.forEach((c,i)=>{
         const cv=ccC[c]||0,pv=ccP[c]||0,d2=pv?dlt(cv,pv):null;
         const bc=d2===null?'#4f9eff':d2>0?'#00e5a0':'#ff4d72';
         const trendIcon=d2===null?'':d2>0?'↑':d2<0?'↓':'=';
         const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
-        h+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
+        ctryHTMLr+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
       });
-      h+=`</div>`;
-    }else{h+=`<div class="empty">Sin datos de países este mes</div>`;}
-    h+=`</div>`;
-    h+=`</div>`;
+    }else{ctryHTMLr+=`<div class="empty">Sin datos</div>`;}
+    ctryHTMLr+=`</div>`;
+    h+=`<div class="gr g2">
+      <div class="card">
+        <div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior.")}</div></div>
+        ${ctryHTMLr}
+      </div>
+      <div class="card">
+        <div class="card-hd"><div>${tip("Leads por pauta","Evolución de postulaciones por pauta — últimos 6 meses.")}</div></div>
+        <div class="cw h200"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta"></canvas></div>
+      </div>
+    </div>`;
   }
-  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Leads por pauta","Evolución de postulaciones por pauta — últimos 6 meses.")}</div></div>
-  <div class="cw h180"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta"></canvas></div>
-  </div></div>`;
 
   // Origen
   if(ordSrc.length>0){
