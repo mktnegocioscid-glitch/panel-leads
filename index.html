@@ -1233,7 +1233,7 @@ function renderRec(key){
         <div class="rec-metric"><div class="rl">Este mes</div><div class="rv">${usaR.length}</div><div class="rb">${bdg(dlt(usaR.length,usaP.length),prevMN)}</div></div>
         <div class="rec-metric"><div class="rl">${isNow?'Hoy':'Promedio'}</div><div class="rv">${isNow?usaR.filter(r=>getDateStrRec(r)===todayStr).length:(maxD>0?(usaR.length/maxD).toFixed(1):0)}</div></div>
       </div>
-      ${(()=>{const sample=curR.find(r=>r[4]&&r[4].trim().length>5);return sample?`<div style="font-size:9px;color:var(--text3);margin-top:6px;font-family:monospace">col4 sample: "${(sample[4]||'').slice(0,40)}" → ${isEnglish(sample[4]||'')?'EN':'ES'}</div>`:'<div style="font-size:9px;color:var(--text3);margin-top:6px">col4: vacío en este mes</div>'})()}
+
     </div>
     <div class="rec-box rec-box-hisp">
       <div class="rec-box-header">
