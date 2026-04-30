@@ -507,24 +507,31 @@ const ES_WORDS_SET=new Set(['que','para','con','los','las','del','una','esta','c
 const EN_WORDS_SET=new Set(['the','and','that','have','with','this','they','would','could','should','their','there','been','being','which','about','because','through','although','however','therefore','myself','yourself','ourselves','excited','passionate','motivated','dedicated','opportunity','financial','independence','lifestyle','team','sales','customer','service','career','achieve','dream','support','income','helping','growing','traveling','building','joining','becoming','loving','hoping','wanting','making','taking','sharing','learning','leading','provides','excites','attracts','inspires','enables','amazing','wonderful','incredible','fantastic','proud','confident','willing','values','goals','future','freedom','flexible','residual','families','memorable','trip','enjoy','love','work','life','people','help','grow','earn','travel','believe','great','good','best','real','true']);
 
 function isEnglish(text){
-  if(!text||text.trim().length<5)return false;
-  // Clean and split into words
-  const words=text.toLowerCase().replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]/g,' ').split(/\s+/).filter(w=>w.length>1);
-  if(words.length===0)return false;
-  let esCount=0, enCount=0;
-  words.forEach(w=>{
-    // Remove accents for comparison
-    const clean=w.normalize('NFD').replace(/[̀-ͯ]/g,'');
-    if(ES_WORDS_SET.has(clean)||ES_WORDS_SET.has(w))esCount++;
-    if(EN_WORDS_SET.has(clean)||EN_WORDS_SET.has(w))enCount++;
-  });
-  // If strong Spanish presence → Spanish
-  if(esCount>=2)return false;
-  // If English words present and more than Spanish → English
-  if(enCount>=2&&enCount>=esCount)return true;
-  // Fallback: check for common English-only short words
-  const shortEN=words.filter(w=>['the','and','for','you','this','with','have','are','was','were','our','can','will','your','they','we','my','is','it','in','of','to','a','an','be','do','go','so','no','he','she','us','am'].includes(w));
-  return shortEN.length>=3;
+  if(!text||text.trim().length<3)return false;
+  const t=text.toLowerCase();
+  // Quick check: if ANY strong Spanish words present → Spanish
+  if(ES_WORDS_SET.has||true){
+    const words=t.replace(/[^a-záéíóúüñ\s]/g,' ').split(/\s+/).filter(w=>w.length>1);
+    // Count Spanish markers
+    let esCount=0;
+    words.forEach(w=>{
+      const clean=w.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(ES_WORDS_SET.has(clean)||ES_WORDS_SET.has(w))esCount++;
+    });
+    // 2+ Spanish words = Spanish, no need to check further
+    if(esCount>=2)return false;
+    // Count English markers
+    let enCount=0;
+    words.forEach(w=>{
+      const clean=w.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(EN_WORDS_SET.has(clean)||EN_WORDS_SET.has(w))enCount++;
+    });
+    if(enCount>=1&&enCount>=esCount)return true;
+    // Fallback: basic English articles/prepositions
+    const basicEN=words.filter(w=>['the','and','for','you','this','with','have','are','was','were','our','can','will','your','they','we','my','is','it','in','of','to','a','an','be','i'].includes(w));
+    return basicEN.length>=2;
+  }
+  return false;
 }
 
 function isUSA(r){
