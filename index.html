@@ -888,7 +888,7 @@ function renderMonth(key){
   if(isNow)h+=`<div class="kpi"><div class="kpi-lbl">Hasta día ${todayN}</div><div class="kpi-val plain">${curUntil}</div>${bdg(dlt(curUntil,prevUntil),prevMN)}</div>`;
   h+=`<div class="kpi"><div class="kpi-lbl">Promedio / día</div><div class="kpi-val plain">${avg.toFixed(1)}</div><span class="badge b-info">leads/día</span></div>`;
   h+=`<div class="kpi"><div class="kpi-lbl">Países activos</div><div class="kpi-val plain">${Object.keys(ccC).length}</div>${newC.length?'<span class="badge b-up">+'+newC.length+' nuevos</span>':'<span class="badge b-neu">—</span>'}</div>`;
-  if(pautaC>0||pautaP>0)h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC}</div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;
+  if(pautaC>0||pautaP>0){const pautaPctR=curR.length>0?Math.round(pautaC/curR.length*100):0;h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPctR}%)</span></div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;}
   if(lyR.length)h+=`<div class="kpi"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
   h+=`</div>`;
 
@@ -1045,12 +1045,23 @@ function renderMonth(key){
     const last6k=last12(key).slice(-6);
     const last6pautaV=last6k.map(k=>gRows(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
     const last6l=last6k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const hasPautaData=last6pautaV.some(v=>v>0);
     const pb6c=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
     const pb6b=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
-    mkC('cpautabars',{type:'bar',data:{labels:last6l,datasets:[{label:'Pauta',data:last6pautaV,backgroundColor:pb6c,borderColor:pb6b,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
-        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
-        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    const canvasPauta=document.getElementById('cpautabars');
+    if(!hasPautaData){
+      canvasPauta.style.display='none';
+      const noDataEl=document.createElement('div');
+      noDataEl.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px;font-style:italic;text-align:center;padding:20px';
+      noDataEl.textContent='No hay análisis de datos de pauta para este período';
+      canvasPauta.parentNode.appendChild(noDataEl);
+    }else{
+      canvasPauta.style.display='';
+      mkC('cpautabars',{type:'bar',data:{labels:last6l,datasets:[{label:'Pauta',data:last6pautaV,backgroundColor:pb6c,borderColor:pb6b,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+          scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+          y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    }
   }
 
   mkC('cmonth',{type:'bar',data:{labels:l12l,datasets:[{label:'Leads',data:l12v,backgroundColor:l12c,borderColor:l12b,borderWidth:1,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
@@ -1266,9 +1277,10 @@ function renderRec(key){
     const pautaHISP=curR.filter(r=>isHispanic(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaUSAP=prevR.filter(r=>isUSA(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaHISPP=prevR.filter(r=>isHispanic(r)&&normCampaign(r[3]||'')==='pauta').length;
+    const pautaPct=curR.length>0?Math.round(pautaC/curR.length*100):0;
     h+=`<div class="kpi feat-amber" style="grid-column:span 2">
       <div class="kpi-lbl">Por pauta</div>
-      <div class="kpi-val">${pautaC}</div>
+      <div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPct}%)</span></div>
       ${bdg(dlt(pautaC,pautaP),prevMN)}
       <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(245,166,35,0.2)">
         <div>
@@ -1451,12 +1463,23 @@ function renderRec(key){
     const last6kr=last12(key).slice(-6);
     const last6pautaR=last6kr.map(k=>gRowsRec(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
     const last6lr=last6kr.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const hasPautaDataR=last6pautaR.some(v=>v>0);
     const pbrc=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
     const pbrb=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
-    mkRC('rcpautabars',{type:'bar',data:{labels:last6lr,datasets:[{label:'Pauta',data:last6pautaR,backgroundColor:pbrc,borderColor:pbrb,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
-        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
-        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    const canvasPautaR=document.getElementById('rcpautabars');
+    if(!hasPautaDataR){
+      canvasPautaR.style.display='none';
+      const noDataElR=document.createElement('div');
+      noDataElR.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px;font-style:italic;text-align:center;padding:20px';
+      noDataElR.textContent='No hay análisis de datos de pauta para este período';
+      canvasPautaR.parentNode.appendChild(noDataElR);
+    }else{
+      canvasPautaR.style.display='';
+      mkRC('rcpautabars',{type:'bar',data:{labels:last6lr,datasets:[{label:'Pauta',data:last6pautaR,backgroundColor:pbrc,borderColor:pbrb,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+          scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+          y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    }
   }
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
