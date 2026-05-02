@@ -10,15 +10,15 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07090f;--bg2:rgba(12,15,26,0.7);--bg3:rgba(19,24,39,0.6);--bg4:rgba(28,36,58,0.6);--card:rgba(15,20,32,0.65);
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.2);
-  --text:#f0f2f7;--text2:#a0aec0;--text3:#5a6e8a;
-  --green:#00e5a0;--green2:#00c484;--gdim:rgba(0,229,160,0.12);--gdim2:rgba(0,229,160,0.06);
-  --red:#ff4d72;--rdim:rgba(255,77,114,0.12);
-  --blue:#4f9eff;--bdim:rgba(79,158,255,0.12);
-  --amber:#f5a623;--adim:rgba(245,166,35,0.12);
-  --purple:#9b6dff;--pdim:rgba(155,109,255,0.12);
-  --sw:200px;--hh:58px;--r:12px;--rs:8px;
+  --bg:#030712;--bg2:rgba(17,24,39,0.7);--bg3:rgba(31,41,55,0.5);--bg4:rgba(55,65,81,0.4);--card:rgba(17,24,39,0.65);
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--border3:rgba(255,255,255,0.18);
+  --text:#f8fafc;--text2:#9ca3af;--text3:#6b7280;
+  --green:#10b981;--green2:#059669;--gdim:rgba(16,185,129,0.12);--gdim2:rgba(16,185,129,0.06);
+  --red:#f43f5e;--rdim:rgba(244,63,94,0.12);
+  --blue:#3b82f6;--bdim:rgba(59,130,246,0.12);
+  --amber:#f59e0b;--adim:rgba(245,158,11,0.12);
+  --purple:#8b5cf6;--pdim:rgba(139,92,246,0.12);
+  --sw:220px;--hh:64px;--r:16px;--rs:10px;
 }
 body.light{
   --bg:#f0f2f7;--bg2:#ffffff;--bg3:#e8ecf2;--bg4:#dde3ee;--card:#ffffff;
@@ -58,8 +58,22 @@ body.light .last-upd{color:#6b7a90}
 .theme-icon{font-size:15px;line-height:1;transition:transform 0.4s ease}
 .theme-btn:hover .theme-icon{transform:rotate(25deg)}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;display:flex;flex-direction:column}
+body{
+  background:var(--bg);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(16,185,129,0.05), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(59,130,246,0.06), transparent 30%);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:14px;display:flex;flex-direction:column
+}
 
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(24px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.anim-item {
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
 /* TOPBAR */
 .topbar{height:var(--hh);background:var(--bg2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;z-index:20;min-width:0}
 .tl{display:flex;align-items:center;gap:14px;min-width:0;flex-shrink:1}
@@ -144,23 +158,27 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 
 /* KPIs */
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:16px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color 0.2s}
-.kpi:hover{border-color:var(--border2)}
-.kpi.feat-green{border-color:rgba(0,229,160,0.4);background:linear-gradient(135deg,rgba(0,229,160,0.08) 0%,var(--card) 60%);box-shadow:0 0 20px rgba(0,229,160,0.06)}
-.kpi.feat-blue{border-color:rgba(79,158,255,0.35);background:linear-gradient(135deg,rgba(79,158,255,0.07) 0%,var(--card) 60%)}
-.kpi.feat-amber{border-color:rgba(245,166,35,0.35);background:linear-gradient(135deg,rgba(245,166,35,0.07) 0%,var(--card) 60%)}
-.kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:var(--text3);margin-bottom:8px}
-.kpi-val{font-size:28px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:8px}
-.kpi.feat-green .kpi-val{color:var(--green)}
-.kpi.feat-blue .kpi-val{color:var(--blue)}
-.kpi.feat-amber .kpi-val{color:var(--amber)}
-.kpi-val.plain{color:var(--text)}
-.badge{display:inline-flex;align-items:center;font-size:10px;padding:2px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace;font-weight:600}
-.b-up{background:var(--gdim);color:var(--green)}
-.b-dn{background:var(--rdim);color:var(--red)}
-.b-neu{background:var(--bg4);color:var(--text3)}
-.b-info{background:var(--bdim);color:var(--blue)}
-.b-amber{background:var(--adim);color:var(--amber)}
+.kpi{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--r);padding:20px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;inset:0;background:radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, -100%), rgba(255,255,255,0.06), transparent 40%);pointer-events:none}
+.kpi:hover{transform:translateY(-4px);border-color:var(--border2);box-shadow:0 12px 30px -10px rgba(0,0,0,0.5)}
+.kpi.feat-green{border-color:rgba(16,185,129,0.3);background:linear-gradient(135deg,rgba(16,185,129,0.08) 0%,var(--card) 70%);box-shadow:0 0 20px rgba(16,185,129,0.05)}
+.kpi.feat-green:hover{border-color:rgba(16,185,129,0.5);box-shadow:0 12px 30px -10px rgba(16,185,129,0.2)}
+.kpi.feat-blue{border-color:rgba(59,130,246,0.3);background:linear-gradient(135deg,rgba(59,130,246,0.07) 0%,var(--card) 70%);box-shadow:0 0 20px rgba(59,130,246,0.05)}
+.kpi.feat-blue:hover{border-color:rgba(59,130,246,0.5);box-shadow:0 12px 30px -10px rgba(59,130,246,0.2)}
+.kpi.feat-amber{border-color:rgba(245,158,11,0.3);background:linear-gradient(135deg,rgba(245,158,11,0.07) 0%,var(--card) 70%);box-shadow:0 0 20px rgba(245,158,11,0.05)}
+.kpi.feat-amber:hover{border-color:rgba(245,158,11,0.5);box-shadow:0 12px 30px -10px rgba(245,158,11,0.2)}
+.kpi-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:var(--text3);margin-bottom:10px}
+.kpi-val{font-size:32px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:10px;background:linear-gradient(135deg,#fff,var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 10px rgba(255,255,255,0.05)}
+.kpi.feat-green .kpi-val{background:linear-gradient(135deg,#34d399,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 10px rgba(16,185,129,0.2)}
+.kpi.feat-blue .kpi-val{background:linear-gradient(135deg,#60a5fa,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 10px rgba(59,130,246,0.2)}
+.kpi.feat-amber .kpi-val{background:linear-gradient(135deg,#fbbf24,#d97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 10px rgba(245,158,11,0.2)}
+.kpi-val.plain{-webkit-text-fill-color:var(--text);text-shadow:none}
+.badge{display:inline-flex;align-items:center;font-size:11px;padding:3px 10px;border-radius:99px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)}
+.b-up{background:linear-gradient(180deg,rgba(16,185,129,0.15),var(--gdim));color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.b-dn{background:linear-gradient(180deg,rgba(244,63,94,0.15),var(--rdim));color:var(--red);border:1px solid rgba(244,63,94,0.2)}
+.b-neu{background:var(--bg4);color:var(--text2);border:1px solid var(--border2)}
+.b-info{background:linear-gradient(180deg,rgba(59,130,246,0.15),var(--bdim));color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+.b-amber{background:linear-gradient(180deg,rgba(245,158,11,0.15),var(--adim));color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
 
 /* GRID */
 .gr{display:grid;gap:14px;margin-bottom:14px}
@@ -170,10 +188,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 @media(max-width:1000px){.g2,.g3{grid-template-columns:1fr}}
 
 /* CARD */
-.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--r);padding:18px}
-.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px}
-.card-ti{font-size:13px;font-weight:700;color:#fff;letter-spacing:-0.01em}
-.card-su{font-size:11px;color:var(--text3);margin-top:3px}
+.card{background:var(--card);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)}
+.card:hover{transform:translateY(-4px);border-color:var(--border3);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.04)}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:8px;position:relative;z-index:2}
+.card-ti{font-size:14px;font-weight:700;color:#fff;letter-spacing:-0.01em;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+.card-su{font-size:12px;color:var(--text3);margin-top:4px}
 .cw{position:relative;width:100%}
 .h180{height:180px}.h210{height:210px}.h240{height:240px}.h260{height:260px}
 
@@ -876,8 +895,11 @@ function renderMonth(key){
   const newC=allCtry.filter(c=>ccC[c]&&!ccP[c]);
   const dm=dlt(curR.length,prevR.length);
 
+  let delay = 0;
+  const anim = () => { delay+=80; return ` anim-item" style="animation-delay:${delay}ms"`; };
+
   // === HTML ===
-  let h=`<div class="ph">
+  let h=`<div class="ph${anim()}">
     <div>
       <div class="ph-title">${MESES[m]} ${y} ${isNow?'<span class="cur-tag">Mes actual</span>':''}</div>
       <div class="ph-sub">${curR.length} leads · vs ${prevMN} ${py}${lyR.length?' · '+MESES[m]+' '+(y-1)+': '+lyR.length:''}</div>
@@ -886,7 +908,7 @@ function renderMonth(key){
   </div>`;
 
   // Insights
-  h+=`<div class="insights">`;
+  h+=`<div class="insights${anim()}">`;
   if(isNow&&leadsToday>0)h+=`<div class="ins ins-info">Hoy: ${leadsToday} lead${leadsToday!==1?'s':''}</div>`;
   if(dm!==null)h+=`<div class="ins ${dm>=0?'ins-up':'ins-dn'}">${dm>=0?'▲':'▼'} ${Math.abs(dm)}% vs ${prevMN}</div>`;
   if(lyR.length){const dl=dlt(curR.length,lyR.length);if(dl!==null)h+=`<div class="ins ${dl>=0?'ins-up':'ins-dn'}">${dl>=0?'▲':'▼'} ${Math.abs(dl)}% vs ${MESES[m]} ${y-1}</div>`}
@@ -899,28 +921,28 @@ function renderMonth(key){
   h+=`<div class="kpi-row">`;
   if(isNow){
     const prevTL=prevR.filter(r=>{const d=r._date||pd(r[0]);return d&&d.getDate()===todayN}).length;
-    h+=`<div class="kpi feat-blue"><div class="kpi-lbl">Leads hoy</div><div class="kpi-val">${leadsToday}</div>${bdg(dlt(leadsToday,prevTL),'mismo día '+prevMN)}</div>`;
+    h+=`<div class="kpi feat-blue${anim()}"><div class="kpi-lbl">Leads hoy</div><div class="kpi-val">${leadsToday}</div>${bdg(dlt(leadsToday,prevTL),'mismo día '+prevMN)}</div>`;
   }
-  h+=`<div class="kpi feat-green"><div class="kpi-lbl">Total mes</div><div class="kpi-val">${curR.length}</div>${bdg(dm,prevMN)}</div>`;
-  if(isNow)h+=`<div class="kpi"><div class="kpi-lbl">Hasta día ${todayN}</div><div class="kpi-val plain">${curUntil}</div>${bdg(dlt(curUntil,prevUntil),prevMN)}</div>`;
-  h+=`<div class="kpi"><div class="kpi-lbl">Promedio / día</div><div class="kpi-val plain">${avg.toFixed(1)}</div><span class="badge b-info">leads/día</span></div>`;
-  h+=`<div class="kpi"><div class="kpi-lbl">Países activos</div><div class="kpi-val plain">${Object.keys(ccC).length}</div>${newC.length?'<span class="badge b-up">+'+newC.length+' nuevos</span>':'<span class="badge b-neu">—</span>'}</div>`;
-  if(pautaC>0||pautaP>0){const pautaPctR=curR.length>0?Math.round(pautaC/curR.length*100):0;h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPctR}%)</span></div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;}
-  if(lyR.length)h+=`<div class="kpi"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
+  h+=`<div class="kpi feat-green${anim()}"><div class="kpi-lbl">Total mes</div><div class="kpi-val">${curR.length}</div>${bdg(dm,prevMN)}</div>`;
+  if(isNow)h+=`<div class="kpi${anim()}"><div class="kpi-lbl">Hasta día ${todayN}</div><div class="kpi-val plain">${curUntil}</div>${bdg(dlt(curUntil,prevUntil),prevMN)}</div>`;
+  h+=`<div class="kpi${anim()}"><div class="kpi-lbl">Promedio / día</div><div class="kpi-val plain">${avg.toFixed(1)}</div><span class="badge b-info">leads/día</span></div>`;
+  h+=`<div class="kpi${anim()}"><div class="kpi-lbl">Países activos</div><div class="kpi-val plain">${Object.keys(ccC).length}</div>${newC.length?'<span class="badge b-up">+'+newC.length+' nuevos</span>':'<span class="badge b-neu">—</span>'}</div>`;
+  if(pautaC>0||pautaP>0){const pautaPctR=curR.length>0?Math.round(pautaC/curR.length*100):0;h+=`<div class="kpi feat-amber${anim()}"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPctR}%)</span></div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;}
+  if(lyR.length)h+=`<div class="kpi${anim()}"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
   h+=`</div>`;
 
   // Quincenas
-  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (días 1–15 y 16–fin) y compara cada una con el mismo período del mes anterior.")}<div class="card-su">vs ${prevMN} ${py}</div></div></div>
+  h+=`<div class="gr g1"><div class="card${anim()}"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (días 1–15 y 16–fin) y compara cada una con el mismo período del mes anterior.")}<div class="card-su">vs ${prevMN} ${py}</div></div></div>
     <div class="qg">
       <div class="qcard"><div class="qlbl">Primera quincena (1–15)</div><div class="qvals"><span class="qcur">${f15c}</span><span class="qprev">vs ${f15p} en ${prevMN}</span></div>${bdg(dlt(f15c,f15p),prevMN)}</div>
       <div class="qcard"><div class="qlbl">Segunda quincena (16–fin)</div><div class="qvals"><span class="qcur">${l15c}</span><span class="qprev">vs ${l15p} en ${prevMN}</span></div>${bdg(dlt(l15c,l15p),prevMN)}</div>
     </div></div></div>`;
 
   // Diario
-  h+=`<div class="gr g1"><div class="card">
+  h+=`<div class="gr g1"><div class="card${anim()}">
     <div class="card-hd">
       <div>${tip("Leads por día del mes","Muestra cuántos leads se captaron cada día. La línea punteada representa el mes anterior para comparación visual.")}<div class="card-su">${MESES[m]} ${y} vs ${prevMN} ${py}</div></div>
-      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
+      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#10b981"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#374151"></div>${prevMN}</div></div>
     </div>
     <div class="cw h210"><canvas id="cdaily" role="img" aria-label="Leads por día"></canvas></div>
   </div></div>`;
@@ -939,7 +961,7 @@ function renderMonth(key){
     }
   });
   const DIAS_HM=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  let hmHTML=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Mapa de Calor de Conversiones (Día vs Hora)","Descubre los mejores momentos de captación de leads. Mayor intensidad indica más leads.")}<div class="card-su">Horarios de mayor captación en ${MESES[m]}</div></div></div>
+  let hmHTML=`<div class="gr g1"><div class="card${anim()}"><div class="card-hd"><div>${tip("Mapa de Calor de Conversiones (Día vs Hora)","Descubre los mejores momentos de captación de leads. Mayor intensidad indica más leads.")}<div class="card-su">Horarios de mayor captación en ${MESES[m]}</div></div></div>
   <div class="hm-wrap"><div class="hm-grid"><div></div>`;
   for(let i=0;i<24;i++) hmHTML+=`<div class="hm-hdr">${i}h</div>`;
   for(let r=0;r<7;r++){
@@ -947,8 +969,8 @@ function renderMonth(key){
     for(let c=0;c<24;c++){
       const val = hmMatrix[r][c];
       const intensity = hmMax>0 ? val/hmMax : 0;
-      const bg = val===0 ? 'var(--bg4)' : `rgba(0,229,160,${0.1 + intensity*0.9})`;
-      const border = val===0 ? '' : 'border: 1px solid rgba(0,229,160,0.3);';
+      const bg = val===0 ? 'var(--bg4)' : `rgba(16,185,129,${0.1 + intensity*0.9})`;
+      const border = val===0 ? '' : 'border: 1px solid rgba(16,185,129,0.3);';
       hmHTML+=`<div class="hm-cell" style="background:${bg};${border}" title="${DIAS_HM[r]} a las ${c}h: ${val} leads"></div>`;
     }
   }
@@ -957,8 +979,8 @@ function renderMonth(key){
 
   // 12 meses + países
   h+=`<div class="gr g2">
-    <div class="card"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de leads en el último año. La barra del mes seleccionado aparece resaltada en verde.")}<div class="card-su">Evolución mensual de captación</div></div></div><div class="cw h210"><canvas id="cmonth" role="img" aria-label="Leads por mes"></canvas></div></div>
-    <div class="card"><div class="card-hd"><div>${tip(`Leads por país — ${MESES[m]}`,"Verde = crecimiento vs mes anterior · Rojo = caída · Azul = país nuevo este mes.")}<div class="card-su">Verde ↑ · Rojo ↓ · Azul = nuevo vs ${prevMN}</div></div></div><div class="cw h210"><canvas id="cctry" role="img" aria-label="Leads por país"></canvas></div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de leads en el último año. La barra del mes seleccionado aparece resaltada en verde.")}<div class="card-su">Evolución mensual de captación</div></div></div><div class="cw h210"><canvas id="cmonth" role="img" aria-label="Leads por mes"></canvas></div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip(`Leads por país — ${MESES[m]}`,"Verde = crecimiento vs mes anterior · Rojo = caída · Azul = país nuevo este mes.")}<div class="card-su">Verde ↑ · Rojo ↓ · Azul = nuevo vs ${prevMN}</div></div></div><div class="cw h210"><canvas id="cctry" role="img" aria-label="Leads por país"></canvas></div></div>
   </div>`;
 
   // Tabla países + pauta chart lado a lado
@@ -1259,8 +1281,11 @@ function renderRec(key){
   const l12l=l12k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
   const dm=dlt(curR.length,prevR.length);
 
+  let delay = 0;
+  const anim = () => { delay+=80; return ` anim-item" style="animation-delay:${delay}ms"`; };
+
   // ── BUILD HTML ──
-  let h=`<div class="ph">
+  let h=`<div class="ph${anim()}">
     <div>
       <div class="ph-title">${MESES[m]} ${y} ${isNow?'<span class="cur-tag">Mes actual</span>':''}</div>
       <div class="ph-sub">${curR.length} postulantes · vs ${prevMN} ${py}${lyR.length?' · '+MESES[m]+' '+(y-1)+': '+lyR.length:''}</div>
@@ -1269,7 +1294,7 @@ function renderRec(key){
   </div>`;
 
   // Insights
-  h+=`<div class="insights">`;
+  h+=`<div class="insights${anim()}">`;
   if(isNow&&leadsToday>0)h+=`<div class="ins ins-info">Hoy: ${leadsToday} postulante${leadsToday!==1?'s':''}</div>`;
   if(dm!==null)h+=`<div class="ins ${dm>=0?'ins-up':'ins-dn'}">${dm>=0?'▲':'▼'} ${Math.abs(dm)}% vs ${prevMN}</div>`;
   if(growing.length)h+=`<div class="ins ins-up">↑ ${growing.slice(0,3).join(', ')}</div>`;
@@ -1325,7 +1350,7 @@ function renderRec(key){
     const pautaUSAP=prevR.filter(r=>isUSA(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaHISPP=prevR.filter(r=>isHispanic(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaPct=curR.length>0?Math.round(pautaC/curR.length*100):0;
-    h+=`<div class="kpi feat-amber" style="grid-column:span 2">
+    h+=`<div class="kpi feat-amber${anim()}" style="grid-column:span 2">
       <div class="kpi-lbl">Por pauta</div>
       <div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPct}%)</span></div>
       ${bdg(dlt(pautaC,pautaP),prevMN)}
@@ -1344,29 +1369,29 @@ function renderRec(key){
       </div>
     </div>`;
   }
-  if(lyR.length)h+=`<div class="kpi"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
+  if(lyR.length)h+=`<div class="kpi${anim()}"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
   h+=`</div>`;
 
   // Quincenas
-  h+=`<div class="gr g1"><div class="card"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (días 1–15 y 16–fin). Permite ver si las postulaciones se concentran al inicio o al final del mes, y compara cada mitad con el mismo período del mes anterior.")}</div></div>
+  h+=`<div class="gr g1"><div class="card${anim()}"><div class="card-hd"><div>${tip("Análisis por quincena","Divide el mes en dos mitades (días 1–15 y 16–fin). Permite ver si las postulaciones se concentran al inicio o al final del mes, y compara cada mitad con el mismo período del mes anterior.")}</div></div>
     <div class="qg">
       <div class="qcard"><div class="qlbl">Primera quincena (1–15)</div><div class="qvals"><span class="qcur">${f15c}</span><span class="qprev">vs ${f15p} en ${prevMN}</span></div>${bdg(dlt(f15c,f15p),prevMN)}</div>
       <div class="qcard"><div class="qlbl">Segunda quincena (16–fin)</div><div class="qvals"><span class="qcur">${l15c}</span><span class="qprev">vs ${l15p} en ${prevMN}</span></div>${bdg(dlt(l15c,l15p),prevMN)}</div>
     </div></div></div>`;
 
   // Diario
-  h+=`<div class="gr g1"><div class="card">
+  h+=`<div class="gr g1"><div class="card${anim()}">
     <div class="card-hd">
       <div>${tip("Postulantes por día del mes","Muestra cuántas postulaciones se recibieron cada día. La barra verde es el mes actual y la línea punteada representa el mes anterior para comparación visual día a día.")}</div>
-      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#00e5a0"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#3d4f66"></div>${prevMN}</div></div>
+      <div class="leg"><div class="leg-i"><div class="leg-d" style="background:rgba(255,77,114,0.7)"></div>Pauta</div><div class="leg-i"><div class="leg-d" style="background:#10b981"></div>${MESES[m]}</div><div class="leg-i"><div class="leg-d" style="background:#374151"></div>${prevMN}</div></div>
     </div>
     <div class="cw h210"><canvas id="rcdaily" role="img" aria-label="Postulantes por día"></canvas></div>
   </div></div>`;
 
   // 12 meses + países
   h+=`<div class="gr g2">
-    <div class="card"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de postulaciones en el último año. La barra del mes seleccionado aparece resaltada en verde para facilitar la comparación con meses anteriores.")}</div></div><div class="cw h210"><canvas id="rcmonth" role="img" aria-label="Postulantes por mes"></canvas></div></div>
-    <div class="card"><div class="card-hd"><div>${tip(`Postulantes por país — ${MESES[m]}`,"Verde = crecimiento vs mes anterior · Rojo = caída · Azul = país nuevo este mes. Permite identificar de qué mercados está creciendo o cayendo el interés en unirse al equipo.")}</div></div><div class="cw h210"><canvas id="rcctry" role="img" aria-label="Postulantes por país"></canvas></div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip("Últimos 12 meses","Evolución mensual de postulaciones en el último año. La barra del mes seleccionado aparece resaltada en verde para facilitar la comparación con meses anteriores.")}</div></div><div class="cw h210"><canvas id="rcmonth" role="img" aria-label="Postulantes por mes"></canvas></div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip(`Postulantes por país — ${MESES[m]}`,"Verde = crecimiento vs mes anterior · Rojo = caída · Azul = país nuevo este mes. Permite identificar de qué mercados está creciendo o cayendo el interés en unirse al equipo.")}</div></div><div class="cw h210"><canvas id="rcctry" role="img" aria-label="Postulantes por país"></canvas></div></div>
   </div>`;
 
   // Tabla países
@@ -1377,7 +1402,7 @@ function renderRec(key){
     if(allCtry.length){
       allCtry.forEach((c,i)=>{
         const cv=ccC[c]||0,pv=ccP[c]||0,d2=pv?dlt(cv,pv):null;
-        const bc=d2===null?'#4f9eff':d2>0?'#00e5a0':'#ff4d72';
+        const bc=d2===null?'#3b82f6':d2>0?'#10b981':'#f43f5e';
         const trendIcon=d2===null?'':d2>0?'↑':d2<0?'↓':'=';
         const trendCol=d2===null?'var(--text3)':d2>0?'var(--green)':d2<0?'var(--red)':'var(--text3)';
         ctryHTMLr+=`<div class="ct-row"><div class="ct-rank">${String(i+1).padStart(2,'0')}</div><div class="ct-name">${c}</div><div class="ct-bw"><div class="ct-b" style="width:${Math.round(cv/maxV*100)}%;background:${bc}"></div></div><div class="ct-trend" style="color:${trendCol}">${trendIcon}</div><div class="ct-cur">${cv}</div><div class="ct-d ${dc(d2)}">${dt(d2)}</div></div>`;
@@ -1385,11 +1410,11 @@ function renderRec(key){
     }else{ctryHTMLr+=`<div class="empty">Sin datos</div>`;}
     ctryHTMLr+=`</div>`;
     h+=`<div class="gr g2">
-      <div class="card">
+      <div class="card${anim()}">
         <div class="card-hd"><div>${tip("Detalle por país de nacimiento","Ranking completo de países de origen de los postulantes, con cantidad del mes actual y variación porcentual respecto al mes anterior.")}</div></div>
         ${ctryHTMLr}
       </div>
-      <div class="card">
+      <div class="card${anim()}">
         <div class="card-hd"><div>${tip("Leads por pauta","Evolución de postulaciones por pauta — últimos 6 meses.")}</div></div>
         <div class="cw h200"><canvas id="rcpautabars" role="img" aria-label="Postulantes por pauta"></canvas></div>
       </div>
@@ -1400,9 +1425,9 @@ function renderRec(key){
   if(ordSrc.length>0){
     const srcMaxV=Math.max(...ordSrc.map(k=>srcC[k]||0),1);
     h+=`<div class="gr g2">
-    <div class="card"><div class="card-hd"><div>${tip(`Origen de postulantes — ${MESES[m]}`,"Distribución porcentual de postulaciones según su fuente de captación (utm_source). Muestra qué canales están atrayendo más candidatos. Solo incluye registros con fuente identificada.")}</div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip(`Origen de postulantes — ${MESES[m]}`,"Distribución porcentual de postulaciones según su fuente de captación (utm_source). Muestra qué canales están atrayendo más candidatos. Solo incluye registros con fuente identificada.")}</div></div>
     <div class="cw h240"><canvas id="rcsrc" role="img" aria-label="Postulantes por fuente"></canvas></div></div>
-    <div class="card"><div class="card-hd"><div>${tip("Detalle por fuente de captación","Ranking de fuentes con cantidad de postulaciones, porcentaje sobre el total con fuente registrada, y variación respecto al mes anterior. Identifica los canales más y menos efectivos.")}</div></div>
+    <div class="card${anim()}"><div class="card-hd"><div>${tip("Detalle por fuente de captación","Ranking de fuentes con cantidad de postulaciones, porcentaje sobre el total con fuente registrada, y variación respecto al mes anterior. Identifica los canales más y menos efectivos.")}</div></div>
     <div class="src-rows">`;
     ordSrc.forEach((k,i)=>{
       const cv=srcC[k]||0,pv=srcP[k]||0;
@@ -1617,6 +1642,13 @@ function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
 // Apply theme immediately on load
 document.addEventListener('DOMContentLoaded', function(){
   applyTheme();
+  document.addEventListener('mousemove', e => {
+    document.querySelectorAll('.kpi').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      el.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+      el.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+    });
+  });
 });
 
 // ── LOGIN ──
