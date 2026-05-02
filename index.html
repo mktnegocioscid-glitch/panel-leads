@@ -1109,33 +1109,34 @@ function buildReport(key,curR,prevR,lyR,o){
   const total=curR.length,prevTotal=prevR.length,dmAbs=Math.abs(dm||0);
   const topC=allCtry[0]||'—',topCV=ccC[topC]||0,topCP=ccP[topC]||0;
   const df15=dlt(f15c,f15p),dl15=dlt(l15c,l15p);
+  const canCompare=!isNow||(todayN>=20);
   let ps=[];
 
   // P1 General
   let p1=isNow
     ?`En lo que va de <strong>${MESES[m]} ${y}</strong>, se captaron <strong>${total} leads</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `
     :`Durante <strong>${MESES[m]} ${y}</strong> se captaron <strong>${total} leads</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `;
-  if(dm!==null)p1+=dm>0?`Esto representa un <span class="rg">crecimiento del ${dmAbs}%</span> frente a los ${prevTotal} de ${prevMN}. `:dm<0?`Se registró una <span class="rr">caída del ${dmAbs}%</span> respecto a los ${prevTotal} de ${prevMN}. `:`El volumen fue similar a ${prevMN} (${prevTotal} leads). `;
+  if(canCompare&&dm!==null)p1+=dm>0?`Esto representa un <span class="rg">crecimiento del ${dmAbs}%</span> frente a los ${prevTotal} de ${prevMN}. `:dm<0?`Se registró una <span class="rr">caída del ${dmAbs}%</span> respecto a los ${prevTotal} de ${prevMN}. `:`El volumen fue similar a ${prevMN} (${prevTotal} leads). `;
   if(isNow&&leadsToday>0)p1+=`Hoy se generaron <strong>${leadsToday} lead${leadsToday!==1?'s':''}</strong>. `;
-  if(lyR.length){const dl=dlt(total,lyR.length);if(dl!==null)p1+=dl>0?`Interanualmente, el crecimiento es del <span class="rg">+${Math.abs(dl)}%</span> respecto a ${MESES[m]} ${y-1} (${lyR.length} leads). `:dl<0?`Interanualmente hay una <span class="rr">baja del ${Math.abs(dl)}%</span> vs ${MESES[m]} ${y-1}. `:`Mismo volumen que ${MESES[m]} ${y-1}. `}
+  if(canCompare&&lyR.length){const dl=dlt(total,lyR.length);if(dl!==null)p1+=dl>0?`Interanualmente, el crecimiento es del <span class="rg">+${Math.abs(dl)}%</span> respecto a ${MESES[m]} ${y-1} (${lyR.length} leads). `:dl<0?`Interanualmente hay una <span class="rr">baja del ${Math.abs(dl)}%</span> vs ${MESES[m]} ${y-1}. `:`Mismo volumen que ${MESES[m]} ${y-1}. `}
   ps.push(p1);
 
   // P2 Quincenas
   let p2=`Por quincena: la primera mitad aportó <strong>${f15c} leads</strong>`;
-  if(f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+=`; la segunda mitad aportó <strong>${l15c} leads</strong>`;
-  if(l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span> vs ${prevMN})`:dl15<0?` (<span class="rr">${dl15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span> vs ${prevMN})`:dl15<0?` (<span class="rr">${dl15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+='.';
   ps.push(p2);
 
   // P3 Países
   if(allCtry.length){
-    const topD=dlt(topCV,topCP);
+    const topD=canCompare?dlt(topCV,topCP):null;
     let p3=`El principal mercado fue <strong>${topC}</strong> con <strong>${topCV} leads</strong>`;
-    if(topCP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
+    if(topD!==null&&topCP)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
     p3+='. ';
-    if(growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
-    if(declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
+    if(canCompare&&growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
+    if(canCompare&&declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
     if(newC.length)p3+=`Nuevos mercados: <strong>${newC.slice(0,3).join(', ')}</strong>. `;
     ps.push(p3);
   }
@@ -1145,13 +1146,17 @@ function buildReport(key,curR,prevR,lyR,o){
     const top=ordSrc[0],topV=srcC[top]||0,topPct=Math.round(topV/srcTotal*100);
     let p4=`La fuente de captación principal fue <strong>${srcLabel(top)}</strong> con <strong>${topV} leads (${topPct}%)</strong>. `;
     if(ordSrc.length>1){const s2=ordSrc[1],v2=srcC[s2]||0;p4+=`Le siguió <strong>${srcLabel(s2)}</strong> con ${v2} leads (${Math.round(v2/srcTotal*100)}%). `}
-    if(pautaC>0){const pp=pautaP?dlt(pautaC,pautaP):null;p4+=`Los leads originados por pauta fueron <strong>${pautaC}</strong>${pp!==null?` (${pp>=0?'<span class="rg">+'+pp+'%</span>':'<span class="rr">'+pp+'%</span>'} vs ${prevMN})`:''}. `}
+    if(pautaC>0){const pp=canCompare&&pautaP?dlt(pautaC,pautaP):null;p4+=`Los leads originados por pauta fueron <strong>${pautaC}</strong>${pp!==null?` (${pp>=0?'<span class="rg">+'+pp+'%</span>':'<span class="rr">'+pp+'%</span>'} vs ${prevMN})`:''}. `}
     ps.push(p4);
   }
 
+  const footerNote=isNow&&!canCompare
+    ?`<div class="rp" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-style:italic">ℹ El análisis comparativo con ${prevMN} estará disponible a partir del día 20 del mes, cuando el volumen de datos sea más representativo.</div>`
+    :'';
+
   return `<div class="report">
     <div class="report-ti">Reporte ejecutivo — ${MESES[m]} ${y}</div>
-    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}</div>
+    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}${footerNote}</div>
   </div>`;
 }
 
@@ -1528,29 +1533,30 @@ function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
   const{isNow,todayN,leadsToday,prevMN,py,y,m,f15c,f15p,l15c,l15p,allCtry,ccC,ccP,growing,declining,newC,ordSrc,srcC,srcTotal,pautaC,pautaP,avg,dm}=o;
   const total=curR.length,prevTotal=prevR.length,dmAbs=Math.abs(dm||0);
   const df15=dlt(f15c,f15p),dl15=dlt(l15c,l15p);
+  const canCompare=!isNow||(todayN>=20);
   let ps=[];
 
   let p1=isNow
     ?`En lo que va de <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `
     :`Durante <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con promedio de <strong>${avg.toFixed(1)} por día</strong>. `;
-  if(dm!==null)p1+=dm>0?`Representa un <span class="rg">crecimiento del ${dmAbs}%</span> vs ${prevMN}. `:dm<0?`Implica una <span class="rr">caída del ${dmAbs}%</span> vs ${prevMN}. `:`Volumen estable respecto a ${prevMN}. `;
+  if(canCompare&&dm!==null)p1+=dm>0?`Representa un <span class="rg">crecimiento del ${dmAbs}%</span> vs ${prevMN}. `:dm<0?`Implica una <span class="rr">caída del ${dmAbs}%</span> vs ${prevMN}. `:`Volumen estable respecto a ${prevMN}. `;
   p1+=`De estas, <strong>${usaR.length} corresponden a USA (Geral)</strong> y <strong>${hispR.length} a Hispanos (Bea)</strong>.`;
   ps.push(p1);
 
   let p2=`Por quincena: primera mitad <strong>${f15c} postulaciones</strong>`;
-  if(f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+=`; segunda mitad <strong>${l15c}</strong>`;
-  if(l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span>)`:dl15<0?` (<span class="rr">${dl15}%</span>)`:`(estable)`;
+  if(canCompare&&l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span>)`:dl15<0?` (<span class="rr">${dl15}%</span>)`:`(estable)`;
   p2+='.';
   ps.push(p2);
 
   if(allCtry.length){
     const topC=allCtry[0],topV=ccC[topC]||0,topP=ccP[topC]||0,topD=dlt(topV,topP);
     let p3=`El principal país de origen fue <strong>${topC}</strong> con <strong>${topV} postulaciones</strong>`;
-    if(topP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
+    if(canCompare&&topP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
     p3+='. ';
-    if(growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
-    if(declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
+    if(canCompare&&growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
+    if(canCompare&&declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
     ps.push(p3);
   }
 
@@ -1561,9 +1567,13 @@ function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
     ps.push(p4);
   }
 
+  const footerNoteR=isNow&&!canCompare
+    ?`<div class="rp" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-style:italic">ℹ El análisis comparativo con ${prevMN} estará disponible a partir del día 20 del mes, cuando el volumen de datos sea más representativo.</div>`
+    :'';
+
   return `<div class="report">
     <div class="report-ti">Reporte ejecutivo — ${MESES[m]} ${y}</div>
-    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}</div>
+    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}${footerNoteR}</div>
   </div>`;
 }
 
