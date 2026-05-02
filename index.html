@@ -407,13 +407,21 @@ const PAL=['#4f9eff','#00e5a0','#f5a623','#ff4d72','#9b6dff','#06b6d4'];
 
 // SOURCE NORMALIZATION — 6 canonical sources
 const SRC_MAP = [
-  {key:'web',       label:'Web',             match:/^web$/i},
-  {key:'ig_orl',    label:'Instagram Orlando',match:/instagram.*orl|ig.*orl/i},
-  {key:'ig_usa',    label:'Instagram USA',    match:/instagram.*usa|ig.*usa|instagramusa/i},
-  {key:'fb_orl',    label:'Facebook Orlando', match:/facebook.*orl|fb.*orl/i},
-  {key:'fb_usa',    label:'Facebook USA',     match:/facebook.*usa|fb.*usa/i},
-  {key:'youtube',   label:'YouTube',          match:/youtube|yt$/i},
+  {key:'web',           label:'Web',                      match:/^web$/i},
+  {key:'ig_orl_pauta',  label:'Instagram Orlando Pauta',  match:/instagram.*orl|ig.*orl/i, pautaOnly:true},
+  {key:'ig_orl_org',    label:'Instagram Orlando Orgánico',match:/instagram.*orl|ig.*orl/i, pautaOnly:false},
+  {key:'ig_usa',        label:'Instagram USA',             match:/instagram.*usa|ig.*usa|instagramusa/i},
+  {key:'fb_orl',        label:'Facebook Orlando',          match:/facebook.*orl|fb.*orl/i},
+  {key:'fb_usa',        label:'Facebook USA',              match:/facebook.*usa|fb.*usa/i},
+  {key:'youtube',       label:'YouTube',                   match:/youtube|yt$/i},
 ];
+// Instagram Orlando split helper
+function isIgOrlPauta(r,colCampaign){
+  const src=normSrc(r[colCampaign-1]||r[2]||'');
+  // Check if source matches ig_orl
+  if(!/instagram.*orl|ig.*orl/i.test(r[2]||''))return false;
+  return PAUTA_MATCH.test(r[colCampaign]||'');
+}
 // CAMPAIGN / PAUTA normalization
 // Pauta detection: substring match, case-insensitive
 const PAUTA_MATCH = /(pauta|paid)/i;
@@ -552,7 +560,22 @@ function getDateStrRec(r){
 }
 function gDayRec(rows){const m={};rows.forEach(r=>{const d=getDateStrRec(r);if(d)m[d]=(m[d]||0)+1});return m}
 function gCountryRec(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
-function gSrcRec(rows){const m={};rows.forEach(r=>{const k=normSrc(r[2]||'');if(k)m[k]=(m[k]||0)+1});return m}
+function gSrcRec(rows){
+  const m={};
+  rows.forEach(r=>{
+    const raw=(r[2]||'').trim();
+    if(!raw)return;
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      const isPauta=PAUTA_MATCH.test(r[3]||'');
+      const k=isPauta?'ig_orl_pauta':'ig_orl_org';
+      m[k]=(m[k]||0)+1;
+      return;
+    }
+    const k=normSrc(raw);
+    if(k)m[k]=(m[k]||0)+1;
+  });
+  return m;
+}
 function gPautaRec(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
 function f15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d<cut})}
 function l15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);const end=new Date(y,m+1,0);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d>=cut&&d<=end})}
@@ -560,7 +583,19 @@ function gDay(rows){const m={};rows.forEach(r=>{const d=getDateStr(r);if(d)m[d]=
 function gCountry(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
 function gSrc(rows){
   const m={};
-  rows.forEach(r=>{const k=normSrc(r[2]||'');if(k)m[k]=(m[k]||0)+1});
+  rows.forEach(r=>{
+    const raw=(r[2]||'').trim();
+    if(!raw)return;
+    // Instagram Orlando: split by pauta vs organic
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      const isPauta=PAUTA_MATCH.test(r[3]||'');
+      const k=isPauta?'ig_orl_pauta':'ig_orl_org';
+      m[k]=(m[k]||0)+1;
+      return;
+    }
+    const k=normSrc(raw);
+    if(k)m[k]=(m[k]||0)+1;
+  });
   return m;
 }
 function gPauta(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
@@ -977,7 +1012,11 @@ function renderMonth(key){
   curR.forEach(r=>{
     const dateKey=getDateStr(r);
     if(!dateKey)return;
-    const src=normSrc(r[2]||'');
+    const raw=(r[2]||'').trim();
+    let src;
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      src=PAUTA_MATCH.test(r[3]||'')?'ig_orl_pauta':'ig_orl_org';
+    }else{src=normSrc(raw);}
     if(!daySrcMap[dateKey])daySrcMap[dateKey]={};
     if(src)daySrcMap[dateKey][src]=(daySrcMap[dateKey][src]||0)+1;
     if(normCampaign(r[3]||'')==='pauta')dayPautaMap[dateKey]=(dayPautaMap[dateKey]||0)+1;
@@ -1400,7 +1439,11 @@ function renderRec(key){
   curR.forEach(r=>{
     const dateKey=getDateStrRec(r);
     if(!dateKey)return;
-    const src=normSrc(r[2]||'');
+    const rawS=(r[2]||'').trim();
+    let src;
+    if(/instagram.*orl|ig.*orl/i.test(rawS)){
+      src=PAUTA_MATCH.test(r[3]||'')?'ig_orl_pauta':'ig_orl_org';
+    }else{src=normSrc(rawS);}
     if(!recDaySrcMap[dateKey])recDaySrcMap[dateKey]={};
     if(src)recDaySrcMap[dateKey][src]=(recDaySrcMap[dateKey][src]||0)+1;
     if(isUSA(r))recDayGeralMap[dateKey]=(recDayGeralMap[dateKey]||0)+1;
