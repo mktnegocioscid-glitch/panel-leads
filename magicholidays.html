@@ -407,13 +407,21 @@ const PAL=['#4f9eff','#00e5a0','#f5a623','#ff4d72','#9b6dff','#06b6d4'];
 
 // SOURCE NORMALIZATION — 6 canonical sources
 const SRC_MAP = [
-  {key:'web',       label:'Web',             match:/^web$/i},
-  {key:'ig_orl',    label:'Instagram Orlando',match:/instagram.*orl|ig.*orl/i},
-  {key:'ig_usa',    label:'Instagram USA',    match:/instagram.*usa|ig.*usa|instagramusa/i},
-  {key:'fb_orl',    label:'Facebook Orlando', match:/facebook.*orl|fb.*orl/i},
-  {key:'fb_usa',    label:'Facebook USA',     match:/facebook.*usa|fb.*usa/i},
-  {key:'youtube',   label:'YouTube',          match:/youtube|yt$/i},
+  {key:'web',           label:'Web',                      match:/^web$/i},
+  {key:'ig_orl_pauta',  label:'Instagram Orlando Pauta',  match:/instagram.*orl|ig.*orl/i, pautaOnly:true},
+  {key:'ig_orl_org',    label:'Instagram Orlando Orgánico',match:/instagram.*orl|ig.*orl/i, pautaOnly:false},
+  {key:'ig_usa',        label:'Instagram USA',             match:/instagram.*usa|ig.*usa|instagramusa/i},
+  {key:'fb_orl',        label:'Facebook Orlando',          match:/facebook.*orl|fb.*orl/i},
+  {key:'fb_usa',        label:'Facebook USA',              match:/facebook.*usa|fb.*usa/i},
+  {key:'youtube',       label:'YouTube',                   match:/youtube|yt$/i},
 ];
+// Instagram Orlando split helper
+function isIgOrlPauta(r,colCampaign){
+  const src=normSrc(r[colCampaign-1]||r[2]||'');
+  // Check if source matches ig_orl
+  if(!/instagram.*orl|ig.*orl/i.test(r[2]||''))return false;
+  return PAUTA_MATCH.test(r[colCampaign]||'');
+}
 // CAMPAIGN / PAUTA normalization
 // Pauta detection: substring match, case-insensitive
 const PAUTA_MATCH = /(pauta|paid)/i;
@@ -552,7 +560,22 @@ function getDateStrRec(r){
 }
 function gDayRec(rows){const m={};rows.forEach(r=>{const d=getDateStrRec(r);if(d)m[d]=(m[d]||0)+1});return m}
 function gCountryRec(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
-function gSrcRec(rows){const m={};rows.forEach(r=>{const k=normSrc(r[2]||'');if(k)m[k]=(m[k]||0)+1});return m}
+function gSrcRec(rows){
+  const m={};
+  rows.forEach(r=>{
+    const raw=(r[2]||'').trim();
+    if(!raw)return;
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      const isPauta=PAUTA_MATCH.test(r[3]||'');
+      const k=isPauta?'ig_orl_pauta':'ig_orl_org';
+      m[k]=(m[k]||0)+1;
+      return;
+    }
+    const k=normSrc(raw);
+    if(k)m[k]=(m[k]||0)+1;
+  });
+  return m;
+}
 function gPautaRec(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
 function f15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d<cut})}
 function l15Rec(rows,k){const{y,m}=pk(k);const cut=new Date(y,m,16);const end=new Date(y,m+1,0);return rows.filter(r=>{const d=r._date||parseDate(r[0]);return d&&d>=cut&&d<=end})}
@@ -560,7 +583,19 @@ function gDay(rows){const m={};rows.forEach(r=>{const d=getDateStr(r);if(d)m[d]=
 function gCountry(rows){const m={};rows.forEach(r=>{const c=(r[1]||'').trim();if(c)m[c]=(m[c]||0)+1});return m}
 function gSrc(rows){
   const m={};
-  rows.forEach(r=>{const k=normSrc(r[2]||'');if(k)m[k]=(m[k]||0)+1});
+  rows.forEach(r=>{
+    const raw=(r[2]||'').trim();
+    if(!raw)return;
+    // Instagram Orlando: split by pauta vs organic
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      const isPauta=PAUTA_MATCH.test(r[3]||'');
+      const k=isPauta?'ig_orl_pauta':'ig_orl_org';
+      m[k]=(m[k]||0)+1;
+      return;
+    }
+    const k=normSrc(raw);
+    if(k)m[k]=(m[k]||0)+1;
+  });
   return m;
 }
 function gPauta(rows){return rows.filter(r=>normCampaign(r[3]||'')==='pauta').length}
@@ -888,7 +923,7 @@ function renderMonth(key){
   if(isNow)h+=`<div class="kpi"><div class="kpi-lbl">Hasta día ${todayN}</div><div class="kpi-val plain">${curUntil}</div>${bdg(dlt(curUntil,prevUntil),prevMN)}</div>`;
   h+=`<div class="kpi"><div class="kpi-lbl">Promedio / día</div><div class="kpi-val plain">${avg.toFixed(1)}</div><span class="badge b-info">leads/día</span></div>`;
   h+=`<div class="kpi"><div class="kpi-lbl">Países activos</div><div class="kpi-val plain">${Object.keys(ccC).length}</div>${newC.length?'<span class="badge b-up">+'+newC.length+' nuevos</span>':'<span class="badge b-neu">—</span>'}</div>`;
-  if(pautaC>0||pautaP>0)h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC}</div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;
+  if(pautaC>0||pautaP>0){const pautaPctR=curR.length>0?Math.round(pautaC/curR.length*100):0;h+=`<div class="kpi feat-amber"><div class="kpi-lbl">Leads por pauta</div><div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPctR}%)</span></div>${bdg(dlt(pautaC,pautaP),prevMN)}</div>`;}
   if(lyR.length)h+=`<div class="kpi"><div class="kpi-lbl">Mismo mes ${y-1}</div><div class="kpi-val plain">${lyR.length}</div>${bdg(dlt(curR.length,lyR.length),'año ant.')}</div>`;
   h+=`</div>`;
 
@@ -977,7 +1012,11 @@ function renderMonth(key){
   curR.forEach(r=>{
     const dateKey=getDateStr(r);
     if(!dateKey)return;
-    const src=normSrc(r[2]||'');
+    const raw=(r[2]||'').trim();
+    let src;
+    if(/instagram.*orl|ig.*orl/i.test(raw)){
+      src=PAUTA_MATCH.test(r[3]||'')?'ig_orl_pauta':'ig_orl_org';
+    }else{src=normSrc(raw);}
     if(!daySrcMap[dateKey])daySrcMap[dateKey]={};
     if(src)daySrcMap[dateKey][src]=(daySrcMap[dateKey][src]||0)+1;
     if(normCampaign(r[3]||'')==='pauta')dayPautaMap[dateKey]=(dayPautaMap[dateKey]||0)+1;
@@ -1045,12 +1084,23 @@ function renderMonth(key){
     const last6k=last12(key).slice(-6);
     const last6pautaV=last6k.map(k=>gRows(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
     const last6l=last6k.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const hasPautaData=last6pautaV.some(v=>v>0);
     const pb6c=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
     const pb6b=last6k.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
-    mkC('cpautabars',{type:'bar',data:{labels:last6l,datasets:[{label:'Pauta',data:last6pautaV,backgroundColor:pb6c,borderColor:pb6b,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
-        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
-        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    const canvasPauta=document.getElementById('cpautabars');
+    if(!hasPautaData){
+      canvasPauta.style.display='none';
+      const noDataEl=document.createElement('div');
+      noDataEl.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px;font-style:italic;text-align:center;padding:20px';
+      noDataEl.textContent='No hay análisis de datos de pauta para este período';
+      canvasPauta.parentNode.appendChild(noDataEl);
+    }else{
+      canvasPauta.style.display='';
+      mkC('cpautabars',{type:'bar',data:{labels:last6l,datasets:[{label:'Pauta',data:last6pautaV,backgroundColor:pb6c,borderColor:pb6b,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+          scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+          y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    }
   }
 
   mkC('cmonth',{type:'bar',data:{labels:l12l,datasets:[{label:'Leads',data:l12v,backgroundColor:l12c,borderColor:l12b,borderWidth:1,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},scales:{
@@ -1098,33 +1148,34 @@ function buildReport(key,curR,prevR,lyR,o){
   const total=curR.length,prevTotal=prevR.length,dmAbs=Math.abs(dm||0);
   const topC=allCtry[0]||'—',topCV=ccC[topC]||0,topCP=ccP[topC]||0;
   const df15=dlt(f15c,f15p),dl15=dlt(l15c,l15p);
+  const canCompare=!isNow||(todayN>=20);
   let ps=[];
 
   // P1 General
   let p1=isNow
     ?`En lo que va de <strong>${MESES[m]} ${y}</strong>, se captaron <strong>${total} leads</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `
     :`Durante <strong>${MESES[m]} ${y}</strong> se captaron <strong>${total} leads</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `;
-  if(dm!==null)p1+=dm>0?`Esto representa un <span class="rg">crecimiento del ${dmAbs}%</span> frente a los ${prevTotal} de ${prevMN}. `:dm<0?`Se registró una <span class="rr">caída del ${dmAbs}%</span> respecto a los ${prevTotal} de ${prevMN}. `:`El volumen fue similar a ${prevMN} (${prevTotal} leads). `;
+  if(canCompare&&dm!==null)p1+=dm>0?`Esto representa un <span class="rg">crecimiento del ${dmAbs}%</span> frente a los ${prevTotal} de ${prevMN}. `:dm<0?`Se registró una <span class="rr">caída del ${dmAbs}%</span> respecto a los ${prevTotal} de ${prevMN}. `:`El volumen fue similar a ${prevMN} (${prevTotal} leads). `;
   if(isNow&&leadsToday>0)p1+=`Hoy se generaron <strong>${leadsToday} lead${leadsToday!==1?'s':''}</strong>. `;
-  if(lyR.length){const dl=dlt(total,lyR.length);if(dl!==null)p1+=dl>0?`Interanualmente, el crecimiento es del <span class="rg">+${Math.abs(dl)}%</span> respecto a ${MESES[m]} ${y-1} (${lyR.length} leads). `:dl<0?`Interanualmente hay una <span class="rr">baja del ${Math.abs(dl)}%</span> vs ${MESES[m]} ${y-1}. `:`Mismo volumen que ${MESES[m]} ${y-1}. `}
+  if(canCompare&&lyR.length){const dl=dlt(total,lyR.length);if(dl!==null)p1+=dl>0?`Interanualmente, el crecimiento es del <span class="rg">+${Math.abs(dl)}%</span> respecto a ${MESES[m]} ${y-1} (${lyR.length} leads). `:dl<0?`Interanualmente hay una <span class="rr">baja del ${Math.abs(dl)}%</span> vs ${MESES[m]} ${y-1}. `:`Mismo volumen que ${MESES[m]} ${y-1}. `}
   ps.push(p1);
 
   // P2 Quincenas
   let p2=`Por quincena: la primera mitad aportó <strong>${f15c} leads</strong>`;
-  if(f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+=`; la segunda mitad aportó <strong>${l15c} leads</strong>`;
-  if(l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span> vs ${prevMN})`:dl15<0?` (<span class="rr">${dl15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span> vs ${prevMN})`:dl15<0?` (<span class="rr">${dl15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+='.';
   ps.push(p2);
 
   // P3 Países
   if(allCtry.length){
-    const topD=dlt(topCV,topCP);
+    const topD=canCompare?dlt(topCV,topCP):null;
     let p3=`El principal mercado fue <strong>${topC}</strong> con <strong>${topCV} leads</strong>`;
-    if(topCP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
+    if(topD!==null&&topCP)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
     p3+='. ';
-    if(growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
-    if(declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
+    if(canCompare&&growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
+    if(canCompare&&declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
     if(newC.length)p3+=`Nuevos mercados: <strong>${newC.slice(0,3).join(', ')}</strong>. `;
     ps.push(p3);
   }
@@ -1134,13 +1185,17 @@ function buildReport(key,curR,prevR,lyR,o){
     const top=ordSrc[0],topV=srcC[top]||0,topPct=Math.round(topV/srcTotal*100);
     let p4=`La fuente de captación principal fue <strong>${srcLabel(top)}</strong> con <strong>${topV} leads (${topPct}%)</strong>. `;
     if(ordSrc.length>1){const s2=ordSrc[1],v2=srcC[s2]||0;p4+=`Le siguió <strong>${srcLabel(s2)}</strong> con ${v2} leads (${Math.round(v2/srcTotal*100)}%). `}
-    if(pautaC>0){const pp=pautaP?dlt(pautaC,pautaP):null;p4+=`Los leads originados por pauta fueron <strong>${pautaC}</strong>${pp!==null?` (${pp>=0?'<span class="rg">+'+pp+'%</span>':'<span class="rr">'+pp+'%</span>'} vs ${prevMN})`:''}. `}
+    if(pautaC>0){const pp=canCompare&&pautaP?dlt(pautaC,pautaP):null;p4+=`Los leads originados por pauta fueron <strong>${pautaC}</strong>${pp!==null?` (${pp>=0?'<span class="rg">+'+pp+'%</span>':'<span class="rr">'+pp+'%</span>'} vs ${prevMN})`:''}. `}
     ps.push(p4);
   }
 
+  const footerNote=isNow&&!canCompare
+    ?`<div class="rp" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-style:italic">ℹ El análisis comparativo con ${prevMN} estará disponible a partir del día 20 del mes, cuando el volumen de datos sea más representativo.</div>`
+    :'';
+
   return `<div class="report">
     <div class="report-ti">Reporte ejecutivo — ${MESES[m]} ${y}</div>
-    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}</div>
+    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}${footerNote}</div>
   </div>`;
 }
 
@@ -1233,7 +1288,7 @@ function renderRec(key){
         <div class="rec-metric"><div class="rl">Este mes</div><div class="rv">${usaR.length}</div><div class="rb">${bdg(dlt(usaR.length,usaP.length),prevMN)}</div></div>
         <div class="rec-metric"><div class="rl">${isNow?'Hoy':'Promedio'}</div><div class="rv">${isNow?usaR.filter(r=>getDateStrRec(r)===todayStr).length:(maxD>0?(usaR.length/maxD).toFixed(1):0)}</div></div>
       </div>
-      ${(()=>{const sample=curR.find(r=>r[4]&&r[4].trim().length>5);return sample?`<div style="font-size:9px;color:var(--text3);margin-top:6px;font-family:monospace">col4 sample: "${(sample[4]||'').slice(0,40)}" → ${isEnglish(sample[4]||'')?'EN':'ES'}</div>`:'<div style="font-size:9px;color:var(--text3);margin-top:6px">col4: vacío en este mes</div>'})()}
+
     </div>
     <div class="rec-box rec-box-hisp">
       <div class="rec-box-header">
@@ -1266,9 +1321,10 @@ function renderRec(key){
     const pautaHISP=curR.filter(r=>isHispanic(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaUSAP=prevR.filter(r=>isUSA(r)&&normCampaign(r[3]||'')==='pauta').length;
     const pautaHISPP=prevR.filter(r=>isHispanic(r)&&normCampaign(r[3]||'')==='pauta').length;
+    const pautaPct=curR.length>0?Math.round(pautaC/curR.length*100):0;
     h+=`<div class="kpi feat-amber" style="grid-column:span 2">
       <div class="kpi-lbl">Por pauta</div>
-      <div class="kpi-val">${pautaC}</div>
+      <div class="kpi-val">${pautaC} <span style="font-size:14px;font-weight:500;opacity:0.8">(${pautaPct}%)</span></div>
       ${bdg(dlt(pautaC,pautaP),prevMN)}
       <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(245,166,35,0.2)">
         <div>
@@ -1383,7 +1439,11 @@ function renderRec(key){
   curR.forEach(r=>{
     const dateKey=getDateStrRec(r);
     if(!dateKey)return;
-    const src=normSrc(r[2]||'');
+    const rawS=(r[2]||'').trim();
+    let src;
+    if(/instagram.*orl|ig.*orl/i.test(rawS)){
+      src=PAUTA_MATCH.test(r[3]||'')?'ig_orl_pauta':'ig_orl_org';
+    }else{src=normSrc(rawS);}
     if(!recDaySrcMap[dateKey])recDaySrcMap[dateKey]={};
     if(src)recDaySrcMap[dateKey][src]=(recDaySrcMap[dateKey][src]||0)+1;
     if(isUSA(r))recDayGeralMap[dateKey]=(recDayGeralMap[dateKey]||0)+1;
@@ -1451,12 +1511,23 @@ function renderRec(key){
     const last6kr=last12(key).slice(-6);
     const last6pautaR=last6kr.map(k=>gRowsRec(k).filter(r=>normCampaign(r[3]||'')==='pauta').length);
     const last6lr=last6kr.map(k=>{const{y:yy,m:mm}=pk(k);return MES3[mm]+(yy!==y?`'${String(yy).slice(2)}`:'')});
+    const hasPautaDataR=last6pautaR.some(v=>v>0);
     const pbrc=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.45)');
     const pbrb=last6kr.map(k=>k===key?'#ff4d72':'rgba(255,77,114,0.7)');
-    mkRC('rcpautabars',{type:'bar',data:{labels:last6lr,datasets:[{label:'Pauta',data:last6pautaR,backgroundColor:pbrc,borderColor:pbrb,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
-        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
-        y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    const canvasPautaR=document.getElementById('rcpautabars');
+    if(!hasPautaDataR){
+      canvasPautaR.style.display='none';
+      const noDataElR=document.createElement('div');
+      noDataElR.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:13px;font-style:italic;text-align:center;padding:20px';
+      noDataElR.textContent='No hay análisis de datos de pauta para este período';
+      canvasPautaR.parentNode.appendChild(noDataElR);
+    }else{
+      canvasPautaR.style.display='';
+      mkRC('rcpautabars',{type:'bar',data:{labels:last6lr,datasets:[{label:'Pauta',data:last6pautaR,backgroundColor:pbrc,borderColor:pbrb,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TTP},
+          scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a'}},
+          y:{grid:{color:'rgba(255,255,255,0.03)'},border:{display:false},ticks:{font:{size:10,family:'JetBrains Mono'},color:'#5a6e8a',precision:0}}}}});
+    }
   }
 
   const l12c=l12k.map(k=>k===key?'#00e5a0':'#1c2a42'),l12b=l12k.map(k=>k===key?'#00e5a0':'#263550');
@@ -1505,29 +1576,30 @@ function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
   const{isNow,todayN,leadsToday,prevMN,py,y,m,f15c,f15p,l15c,l15p,allCtry,ccC,ccP,growing,declining,newC,ordSrc,srcC,srcTotal,pautaC,pautaP,avg,dm}=o;
   const total=curR.length,prevTotal=prevR.length,dmAbs=Math.abs(dm||0);
   const df15=dlt(f15c,f15p),dl15=dlt(l15c,l15p);
+  const canCompare=!isNow||(todayN>=20);
   let ps=[];
 
   let p1=isNow
     ?`En lo que va de <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con un promedio de <strong>${avg.toFixed(1)} por día</strong>. `
     :`Durante <strong>${MESES[m]} ${y}</strong> se recibieron <strong>${total} postulaciones</strong> con promedio de <strong>${avg.toFixed(1)} por día</strong>. `;
-  if(dm!==null)p1+=dm>0?`Representa un <span class="rg">crecimiento del ${dmAbs}%</span> vs ${prevMN}. `:dm<0?`Implica una <span class="rr">caída del ${dmAbs}%</span> vs ${prevMN}. `:`Volumen estable respecto a ${prevMN}. `;
+  if(canCompare&&dm!==null)p1+=dm>0?`Representa un <span class="rg">crecimiento del ${dmAbs}%</span> vs ${prevMN}. `:dm<0?`Implica una <span class="rr">caída del ${dmAbs}%</span> vs ${prevMN}. `:`Volumen estable respecto a ${prevMN}. `;
   p1+=`De estas, <strong>${usaR.length} corresponden a USA (Geral)</strong> y <strong>${hispR.length} a Hispanos (Bea)</strong>.`;
   ps.push(p1);
 
   let p2=`Por quincena: primera mitad <strong>${f15c} postulaciones</strong>`;
-  if(f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
+  if(canCompare&&f15p>0)p2+=df15>0?` (<span class="rg">+${df15}%</span> vs ${prevMN})`:df15<0?` (<span class="rr">${df15}%</span> vs ${prevMN})`:`(igual que ${prevMN})`;
   p2+=`; segunda mitad <strong>${l15c}</strong>`;
-  if(l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span>)`:dl15<0?` (<span class="rr">${dl15}%</span>)`:`(estable)`;
+  if(canCompare&&l15p>0)p2+=dl15>0?` (<span class="rg">+${dl15}%</span>)`:dl15<0?` (<span class="rr">${dl15}%</span>)`:`(estable)`;
   p2+='.';
   ps.push(p2);
 
   if(allCtry.length){
     const topC=allCtry[0],topV=ccC[topC]||0,topP=ccP[topC]||0,topD=dlt(topV,topP);
     let p3=`El principal país de origen fue <strong>${topC}</strong> con <strong>${topV} postulaciones</strong>`;
-    if(topP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
+    if(canCompare&&topP&&topD!==null)p3+=topD>0?` (<span class="rg">+${topD}%</span> vs ${prevMN})`:` (<span class="rr">${topD}%</span> vs ${prevMN})`;
     p3+='. ';
-    if(growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
-    if(declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
+    if(canCompare&&growing.length)p3+=`En crecimiento: <span class="rg">${growing.slice(0,4).join(', ')}</span>. `;
+    if(canCompare&&declining.length)p3+=`En retroceso: <span class="rr">${declining.slice(0,3).join(', ')}</span>. `;
     ps.push(p3);
   }
 
@@ -1538,9 +1610,13 @@ function buildReportRec(key,curR,prevR,lyR,usaR,hispR,o){
     ps.push(p4);
   }
 
+  const footerNoteR=isNow&&!canCompare
+    ?`<div class="rp" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);font-style:italic">ℹ El análisis comparativo con ${prevMN} estará disponible a partir del día 20 del mes, cuando el volumen de datos sea más representativo.</div>`
+    :'';
+
   return `<div class="report">
     <div class="report-ti">Reporte ejecutivo — ${MESES[m]} ${y}</div>
-    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}</div>
+    <div class="report-body">${ps.map(p=>`<div class="rp">${p}</div>`).join('')}${footerNoteR}</div>
   </div>`;
 }
 
