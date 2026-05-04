@@ -144,7 +144,7 @@
   }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
   tbody tr:hover { background: var(--bg3); }
-  tbody td { padding: 11px 12px; color: var(--text); vertical-align: middle; }
+  tbody td { padding: 6px 12px; color: var(--text); vertical-align: middle; }
   
   .table-wrap {
     background: var(--bg2);
@@ -264,14 +264,13 @@
     <select id="filterServidor" onchange="renderServidor()">
       <option value="">Todos los estados</option>
       <option value="ACTIVA">Activa</option>
-      <option value="DISPONIBLE">Disponible</option>
     </select>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Slot</th>
+          <th>Servidor</th>
           <th>Cliente</th>
           <th>Opción $</th>
           <th>Inicio</th>
@@ -329,7 +328,7 @@
     <div class="modal-title" id="modalServidorTitle">Nueva Campaña</div>
     <div class="form-grid">
       <div class="form-row">
-        <label class="form-label">Slot (Nro. Servidor)</label>
+        <label class="form-label">Servidor (Nro.)</label>
         <input type="number" class="form-input" id="s_slot" placeholder="Ej: 7">
       </div>
       <div class="form-row">
@@ -548,9 +547,8 @@ function renderServidor() {
   });
 
   document.getElementById('servidorStats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Slots</div><div class="stat-val blue">${servidor.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Servidores</div><div class="stat-val blue">${servidor.length}</div></div>
     <div class="stat-card"><div class="stat-label">Activas</div><div class="stat-val green">${activas}</div></div>
-    <div class="stat-card"><div class="stat-label">Disponibles</div><div class="stat-val amber">${disponibles}</div></div>
     <div class="stat-card"><div class="stat-label">Por Vencer (7d)</div><div class="stat-val red">${porVencer}</div></div>
   `;
 
@@ -567,6 +565,7 @@ function renderServidor() {
 
   const rows = servidor.filter(r => {
     const est = getEstadoServidor(r);
+    if (est === 'DISPONIBLE') return false;
     const matchSearch = !search || (r.cliente||'').toLowerCase().includes(search);
     const matchFilter = !filter || est === filter;
     return matchSearch && matchFilter;
@@ -729,7 +728,7 @@ function editServidor(slot) {
   const r = servidor.find(x => x.slot === slot);
   if (!r) return;
   editingServidor = slot;
-  document.getElementById('modalServidorTitle').textContent = 'Editar Campaña — Slot ' + slot;
+  document.getElementById('modalServidorTitle').textContent = 'Editar Campaña — Servidor ' + slot;
   document.getElementById('s_slot').value = r.slot;
   document.getElementById('s_cliente').value = r.cliente || '';
   document.getElementById('s_opcion').value = r.opcion || '';
@@ -761,7 +760,7 @@ function saveServidor() {
 }
 
 function deleteServidor(slot) {
-  if (!confirm('¿Eliminar campaña del slot ' + slot + '?')) return;
+  if (!confirm('¿Eliminar campaña del servidor ' + slot + '?')) return;
   const idx = servidor.findIndex(x => x.slot === slot);
   if (idx >= 0) {
     servidor[idx] = {slot, cliente: '', opcion: null, inicio: '', fin: ''};
