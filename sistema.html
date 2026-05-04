@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Administración</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #e8eaf0;
+    --text2: #8b90a7;
+    --accent: #5b8cf7;
+    --accent2: #3d6ee8;
+    --green: #2dd4a0;
+    --green-bg: rgba(45,212,160,0.1);
+    --amber: #f5a623;
+    --amber-bg: rgba(245,166,35,0.1);
+    --red: #f56565;
+    --red-bg: rgba(245,101,101,0.1);
+    --blue-bg: rgba(91,140,247,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--text2); font-weight: 400; font-size: 13px; margin-left: 8px; }
+  .today { font-size: 13px; color: var(--text2); }
+  
+  .nav-tabs {
+    display: flex;
+    gap: 0;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-tab {
+    padding: 14px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text2);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  
+  .content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-val { font-size: 26px; font-weight: 700; color: var(--text); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.amber { color: var(--amber); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.blue { color: var(--accent); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .section-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-bar input, .search-bar select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
+  .search-bar input { width: 240px; }
+  .search-bar select option { background: var(--bg2); }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .btn-danger:hover { background: rgba(245,101,101,0.2); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--text2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td { padding: 11px 12px; color: var(--text); vertical-align: middle; }
+  
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-blue { background: var(--blue-bg); color: var(--accent); }
+  .badge-gray { background: rgba(255,255,255,0.05); color: var(--text2); }
+
+  .days-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-track { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); flex: 1; min-width: 60px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 2rem;
+    width: 540px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 1.5rem; }
+  .form-row { margin-bottom: 1rem; }
+  .form-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+  .alert-banner {
+    background: rgba(245,166,35,0.08);
+    border: 1px solid rgba(245,166,35,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--amber);
+  }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+
+  .empty-state { text-align: center; padding: 3rem; color: var(--text2); font-size: 14px; }
+
+  .progress-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+
+  @media (max-width: 600px) {
+    .content { padding: 1rem; }
+    .topbar { padding: 0 1rem; }
+    .nav-tabs { padding: 0 1rem; overflow-x: auto; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">AdServer Panel <span>Gestión de Campañas & Hosting</span></div>
+  <div class="today" id="dateDisplay"></div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('servidor')">Campañas</div>
+  <div class="nav-tab" onclick="showPage('hosting')">Hosting & Dominios</div>
+</div>
+
+<!-- CAMPAÑAS -->
+<div class="content">
+<div id="page-servidor" class="page active">
+  <div class="stats-grid" id="servidorStats"></div>
+  <div id="alertaServidor"></div>
+  <div class="section-header">
+    <span class="section-title">Campañas</span>
+    <button class="btn btn-primary" onclick="openModal('servidor')">+ Nueva Campaña</button>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="searchServidor" placeholder="Buscar cliente..." oninput="renderServidor()">
+    <select id="filterServidor" onchange="renderServidor()">
+      <option value="">Todos los estados</option>
+      <option value="ACTIVA">Activa</option>
+      <option value="DISPONIBLE">Disponible</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Slot</th>
+          <th>Cliente</th>
+          <th>Opción $</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Días campaña</th>
+          <th>Días restantes</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyServidor"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- HOSTING -->
+<div id="page-hosting" class="page">
+  <div class="stats-grid" id="hostingStats"></div>
+  <div id="alertaHosting"></div>
+  <div class="section-header">
+    <span class="section-title">Hosting & Dominios</span>
+    <button class="btn btn-primary" onclick="openModal('hosting')">+ Nuevo Dominio</button>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="searchHosting" placeholder="Buscar dominio..." oninput="renderHosting()">
+    <select id="filterHosting" onchange="renderHosting()">
+      <option value="">Todos los estados</option>
+      <option value="ACTIVO">Activo</option>
+      <option value="VENCIDO">Vencido</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Dominio</th>
+          <th>Vencimiento</th>
+          <th>Días restantes</th>
+          <th>Vencimiento</th>
+          <th>Estado</th>
+          <th>Dominio propio</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyHosting"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- MODAL CAMPAÑA -->
+<div class="modal-overlay" id="modalServidor">
+  <div class="modal">
+    <div class="modal-title" id="modalServidorTitle">Nueva Campaña</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="form-label">Slot (Nro. Servidor)</label>
+        <input type="number" class="form-input" id="s_slot" placeholder="Ej: 7">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Opción $</label>
+        <input type="number" class="form-input" id="s_opcion" placeholder="Ej: 8000000">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Cliente</label>
+      <input type="text" class="form-input" id="s_cliente" placeholder="Nombre del cliente">
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="form-label">Fecha de Inicio</label>
+        <input type="date" class="form-input" id="s_inicio">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Fecha de Fin</label>
+        <input type="date" class="form-input" id="s_fin">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('servidor')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveServidor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HOSTING -->
+<div class="modal-overlay" id="modalHosting">
+  <div class="modal">
+    <div class="modal-title" id="modalHostingTitle">Nuevo Dominio</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="form-label">N°</label>
+        <input type="number" class="form-input" id="h_num" placeholder="Ej: 44">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="h_estado">
+          <option value="ACTIVO">ACTIVO</option>
+          <option value="VENCIDO">VENCIDO</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Dominio</label>
+      <input type="text" class="form-input" id="h_dominio" placeholder="Ej: midominio.com.ar">
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="form-label">Fecha de Vencimiento</label>
+        <input type="date" class="form-input" id="h_vencimiento">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Dominio propio (SI/NO)</label>
+        <select class="form-input" id="h_dominio_propio">
+          <option value="">NO</option>
+          <option value="SI">SI</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('hosting')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveHosting()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+document.getElementById('dateDisplay').textContent = TODAY.toLocaleDateString('es-AR', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+function diffDays(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  d.setHours(0,0,0,0);
+  return Math.round((d - TODAY) / 86400000);
+}
+
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('es-AR');
+}
+
+function fmtMoney(n) {
+  if (!n) return '—';
+  return '$' + Number(n).toLocaleString('es-AR');
+}
+
+// === DATOS SERVIDOR ===
+let servidor = [
+  {slot:1, cliente:'teclados de membrana', opcion:8000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:2, cliente:'state grid catalogo', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:3, cliente:'state grid', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-30'},
+  {slot:4, cliente:'todo trafo', opcion:8000000, inicio:'2026-04-11', fin:'2026-05-10'},
+  {slot:5, cliente:'estudio contable lavalle', opcion:32000000, inicio:'2026-04-07', fin:'2026-05-06'},
+  {slot:6, cliente:'defran', opcion:8000000, inicio:'2026-04-30', fin:'2026-05-29'},
+  {slot:7, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:8, cliente:'antiguedades', opcion:16000000, inicio:'2026-04-19', fin:'2026-05-18'},
+  {slot:9, cliente:'ikigay', opcion:16000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:10, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:11, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:12, cliente:'fortelac', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:13, cliente:'letter system', opcion:6000000, inicio:'', fin:''},
+  {slot:14, cliente:'dr imports', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:15, cliente:'maderpak corporativo', opcion:8000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:16, cliente:'todo trafo nuevo', opcion:8000000, inicio:'2026-03-19', fin:'2026-04-18'},
+  {slot:17, cliente:'dainus', opcion:8000000, inicio:'2026-04-16', fin:'2026-05-15'},
+  {slot:18, cliente:'mpk pilates', opcion:2000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:19, cliente:'sesytel', opcion:16000000, inicio:'2026-04-16', fin:'2026-05-15'},
+  {slot:20, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:21, cliente:'ericay', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:22, cliente:'maderpak estanterias', opcion:5000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:23, cliente:'textil once invierno', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:24, cliente:'textil once invierno', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:25, cliente:'textil once viejo', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:26, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:27, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:28, cliente:'limpieza integral sur', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:29, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:30, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:31, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:32, cliente:'boutique', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:33, cliente:'luxury', opcion:50000000, inicio:'2026-05-01', fin:'2026-05-31'},
+  {slot:34, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:35, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:36, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:37, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:38, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:39, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:40, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:41, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:42, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:43, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:44, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:45, cliente:'', opcion:null, inicio:'', fin:''},
+  {slot:46, cliente:'mapas', opcion:16000000, inicio:'2026-05-01', fin:'2026-05-31'},
+];
+
+// === DATOS HOSTING ===
+let hosting = [
+  {num:1, dominio:'atencionempresas.com.ar', vencimiento:'2027-01-17', estado:'ACTIVO', dominioPropio:''},
+  {num:2, dominio:'centralfrio.com.ar', vencimiento:'2027-01-17', estado:'ACTIVO', dominioPropio:''},
+  {num:3, dominio:'departamentosmardelaspampas.com', vencimiento:'2026-07-25', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:4, dominio:'tlvservicios.com', vencimiento:'2027-01-20', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:5, dominio:'tlvservicios.com.ar', vencimiento:'2027-01-20', estado:'ACTIVO', dominioPropio:''},
+  {num:7, dominio:'equiposgenuine.com.ar', vencimiento:'2026-11-17', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:8, dominio:'ibrokerspropiedades.com.ar', vencimiento:'2026-11-18', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:9, dominio:'integraltraducciones.com.ar', vencimiento:'2026-11-01', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:11, dominio:'tuguiadelaweb.com', vencimiento:'2027-04-25', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:12, dominio:'bsdesarrollos.com.ar', vencimiento:'2026-06-15', estado:'ACTIVO', dominioPropio:''},
+  {num:13, dominio:'limpiezaintegralsur.com.ar', vencimiento:'2027-05-04', estado:'ACTIVO', dominioPropio:''},
+  {num:14, dominio:'nunezhnos.com.ar', vencimiento:'2026-07-19', estado:'ACTIVO', dominioPropio:''},
+  {num:15, dominio:'ladrillohormigoncelular.com.ar', vencimiento:'2026-12-18', estado:'ACTIVO', dominioPropio:''},
+  {num:16, dominio:'corredorcanningsanvicente.com.ar', vencimiento:'2026-11-27', estado:'ACTIVO', dominioPropio:''},
+  {num:17, dominio:'purostock.com', vencimiento:'2026-10-19', estado:'ACTIVO', dominioPropio:''},
+  {num:18, dominio:'mhtravelagency.com', vencimiento:'2027-04-06', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:19, dominio:'colorstock.com.ar', vencimiento:'2026-05-07', estado:'ACTIVO', dominioPropio:''},
+  {num:20, dominio:'amomicuerpo.com.ar', vencimiento:'2027-04-18', estado:'ACTIVO', dominioPropio:''},
+  {num:21, dominio:'mhcomercializaciones.com', vencimiento:'2027-04-09', estado:'ACTIVO', dominioPropio:''},
+  {num:23, dominio:'aberturasericay.com.ar', vencimiento:'2026-05-24', estado:'ACTIVO', dominioPropio:''},
+  {num:24, dominio:'empresasmoviles.com.ar', vencimiento:'2026-11-04', estado:'ACTIVO', dominioPropio:''},
+  {num:25, dominio:'solucionesenclimatizacion.com.ar', vencimiento:'2026-12-11', estado:'ACTIVO', dominioPropio:''},
+  {num:26, dominio:'rlmarketingeditorial.com', vencimiento:'2027-01-28', estado:'ACTIVO', dominioPropio:''},
+  {num:27, dominio:'itinera.com.ar', vencimiento:'2026-05-28', estado:'ACTIVO', dominioPropio:''},
+  {num:28, dominio:'stategridargentina.com.ar', vencimiento:'2026-10-11', estado:'ACTIVO', dominioPropio:''},
+  {num:29, dominio:'stategridargentina.com', vencimiento:'2026-10-10', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:31, dominio:'ikglimpieza.com.ar', vencimiento:'2026-09-02', estado:'ACTIVO', dominioPropio:''},
+  {num:32, dominio:'luxuryhouse.com.ar', vencimiento:'2026-08-29', estado:'ACTIVO', dominioPropio:''},
+  {num:33, dominio:'navidadencaja.com.ar', vencimiento:'', estado:'VENCIDO', dominioPropio:''},
+  {num:35, dominio:'lechefortelac.com.ar', vencimiento:'2027-04-23', estado:'ACTIVO', dominioPropio:''},
+  {num:36, dominio:'jybsolucioneselectricas.com.ar', vencimiento:'2027-04-16', estado:'ACTIVO', dominioPropio:''},
+  {num:37, dominio:'tutiendabest.com', vencimiento:'2027-03-12', estado:'ACTIVO', dominioPropio:'SI'},
+  {num:38, dominio:'puntoweb.ar', vencimiento:'2026-02-27', estado:'VENCIDO', dominioPropio:''},
+  {num:39, dominio:'estudiolavalle.com.ar', vencimiento:'2026-11-18', estado:'ACTIVO', dominioPropio:''},
+  {num:40, dominio:'lidermax.com.ar', vencimiento:'2026-10-12', estado:'ACTIVO', dominioPropio:''},
+  {num:41, dominio:'usatraveltrip.com', vencimiento:'2026-10-12', estado:'ACTIVO', dominioPropio:''},
+  {num:42, dominio:'mpkpilates.com.ar', vencimiento:'2026-09-25', estado:'ACTIVO', dominioPropio:''},
+  {num:43, dominio:'lechevit.com.ar', vencimiento:'2026-06-19', estado:'ACTIVO', dominioPropio:''},
+];
+
+let editingServidor = null;
+let editingHosting = null;
+
+function getEstadoServidor(row) {
+  if (!row.cliente) return 'DISPONIBLE';
+  if (!row.fin) return 'DISPONIBLE';
+  const d = diffDays(row.fin);
+  if (d === null) return 'DISPONIBLE';
+  if (d < 0) return 'DISPONIBLE';
+  return 'ACTIVA';
+}
+
+function getDiasServidor(row) {
+  if (!row.inicio || !row.fin) return null;
+  const ini = new Date(row.inicio); const fin = new Date(row.fin);
+  return Math.round((fin - ini) / 86400000);
+}
+
+function renderServidor() {
+  const search = document.getElementById('searchServidor').value.toLowerCase();
+  const filter = document.getElementById('filterServidor').value;
+  const tbody = document.getElementById('tbodyServidor');
+  
+  let activas = 0, disponibles = 0, porVencer = 0;
+  servidor.forEach(r => {
+    const est = getEstadoServidor(r);
+    if (est === 'ACTIVA') {
+      activas++;
+      const d = diffDays(r.fin);
+      if (d !== null && d <= 7) porVencer++;
+    } else disponibles++;
+  });
+
+  document.getElementById('servidorStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Slots</div><div class="stat-val blue">${servidor.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Activas</div><div class="stat-val green">${activas}</div></div>
+    <div class="stat-card"><div class="stat-label">Disponibles</div><div class="stat-val amber">${disponibles}</div></div>
+    <div class="stat-card"><div class="stat-label">Por Vencer (7d)</div><div class="stat-val red">${porVencer}</div></div>
+  `;
+
+  const alertas = servidor.filter(r => {
+    const est = getEstadoServidor(r);
+    if (est !== 'ACTIVA') return false;
+    const d = diffDays(r.fin);
+    return d !== null && d <= 7;
+  });
+  const alertEl = document.getElementById('alertaServidor');
+  if (alertas.length > 0) {
+    alertEl.innerHTML = `<div class="alert-banner"><span class="alert-icon">⚠</span> ${alertas.length} campaña(s) vencen en los próximos 7 días: ${alertas.map(a => `<strong>${a.cliente}</strong>`).join(', ')}</div>`;
+  } else alertEl.innerHTML = '';
+
+  const rows = servidor.filter(r => {
+    const est = getEstadoServidor(r);
+    const matchSearch = !search || (r.cliente||'').toLowerCase().includes(search);
+    const matchFilter = !filter || est === filter;
+    return matchSearch && matchFilter;
+  });
+
+  if (rows.length === 0) { tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">Sin resultados</div></td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(r => {
+    const est = getEstadoServidor(r);
+    const diasC = getDiasServidor(r);
+    const diasR = r.fin ? diffDays(r.fin) : null;
+    const pct = (diasC && diasR !== null) ? Math.max(0, Math.min(100, Math.round((diasR / diasC) * 100))) : 0;
+    let barColor = '#2dd4a0';
+    if (diasR !== null && diasR <= 7) barColor = '#f56565';
+    else if (diasR !== null && diasR <= 14) barColor = '#f5a623';
+
+    const badgeEst = est === 'ACTIVA'
+      ? `<span class="badge badge-green">ACTIVA</span>`
+      : `<span class="badge badge-gray">DISPONIBLE</span>`;
+
+    const diasRText = diasR !== null ? (diasR < 0 ? `<span style="color:var(--red)">${diasR}d</span>` : diasR + 'd') : '—';
+
+    return `<tr>
+      <td><strong>${r.slot}</strong></td>
+      <td>${r.cliente || '<span style="color:var(--text2);font-style:italic">—</span>'}</td>
+      <td>${fmtMoney(r.opcion)}</td>
+      <td>${fmt(r.inicio)}</td>
+      <td>${fmt(r.fin)}</td>
+      <td>${diasC !== null ? diasC + 'd' : '—'}</td>
+      <td>
+        <div class="days-bar">
+          <span style="min-width:28px">${diasRText}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        </div>
+      </td>
+      <td>${badgeEst}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editServidor(${r.slot})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteServidor(${r.slot})" style="margin-left:4px">Borrar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHosting() {
+  const search = document.getElementById('searchHosting').value.toLowerCase();
+  const filter = document.getElementById('filterHosting').value;
+  const tbody = document.getElementById('tbodyHosting');
+
+  let activos = 0, vencidos = 0, porVencer = 0;
+  hosting.forEach(r => {
+    if (r.estado === 'VENCIDO') vencidos++;
+    else {
+      activos++;
+      const d = diffDays(r.vencimiento);
+      if (d !== null && d <= 30) porVencer++;
+    }
+  });
+
+  document.getElementById('hostingStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total dominios</div><div class="stat-val blue">${hosting.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Activos</div><div class="stat-val green">${activos}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-val red">${vencidos}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencen en 30d</div><div class="stat-val amber">${porVencer}</div></div>
+  `;
+
+  const alertas = hosting.filter(r => {
+    if (r.estado === 'VENCIDO') return true;
+    const d = diffDays(r.vencimiento);
+    return d !== null && d <= 30;
+  });
+  const alertEl = document.getElementById('alertaHosting');
+  if (alertas.length > 0) {
+    alertEl.innerHTML = `<div class="alert-banner"><span class="alert-icon">⚠</span> ${alertas.length} dominio(s) vencen pronto o ya vencieron: ${alertas.slice(0,5).map(a => `<strong>${a.dominio}</strong>`).join(', ')}${alertas.length > 5 ? '...' : ''}</div>`;
+  } else alertEl.innerHTML = '';
+
+  const rows = hosting.filter(r => {
+    const matchSearch = !search || r.dominio.toLowerCase().includes(search);
+    const matchFilter = !filter || r.estado === filter;
+    return matchSearch && matchFilter;
+  });
+
+  const sorted = [...rows].sort((a, b) => {
+    const da = diffDays(a.vencimiento) ?? 99999;
+    const db = diffDays(b.vencimiento) ?? 99999;
+    return da - db;
+  });
+
+  if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">Sin resultados</div></td></tr>`; return; }
+
+  tbody.innerHTML = sorted.map(r => {
+    const dias = diffDays(r.vencimiento);
+    let badgeEst = r.estado === 'ACTIVO'
+      ? `<span class="badge badge-green">ACTIVO</span>`
+      : `<span class="badge badge-red">VENCIDO</span>`;
+
+    let vencBadge = '';
+    let diasText = '—';
+    if (r.estado === 'VENCIDO' || (dias !== null && dias < 0)) {
+      vencBadge = `<span class="badge badge-red">VENCIDO</span>`;
+      diasText = dias !== null ? `<span style="color:var(--red)">${dias}d</span>` : '—';
+    } else if (dias !== null && dias <= 30) {
+      vencBadge = `<span class="badge badge-amber">A VENCER</span>`;
+      diasText = `<span style="color:var(--amber)">${dias}d</span>`;
+    } else {
+      vencBadge = `<span class="badge badge-blue">FALTA</span>`;
+      diasText = dias !== null ? dias + 'd' : '—';
+    }
+
+    return `<tr>
+      <td>${r.num}</td>
+      <td><strong>${r.dominio}</strong></td>
+      <td>${fmt(r.vencimiento)}</td>
+      <td>${diasText}</td>
+      <td>${vencBadge}</td>
+      <td>${badgeEst}</td>
+      <td>${r.dominioPropio === 'SI' ? '<span class="badge badge-blue">SI</span>' : '<span style="color:var(--text2)">NO</span>'}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editHosting(${r.num})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteHosting(${r.num})" style="margin-left:4px">Borrar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function openModal(type) {
+  editingServidor = null;
+  editingHosting = null;
+  if (type === 'servidor') {
+    document.getElementById('modalServidorTitle').textContent = 'Nueva Campaña';
+    document.getElementById('s_slot').value = '';
+    document.getElementById('s_cliente').value = '';
+    document.getElementById('s_opcion').value = '';
+    document.getElementById('s_inicio').value = '';
+    document.getElementById('s_fin').value = '';
+    document.getElementById('modalServidor').classList.add('open');
+  } else {
+    document.getElementById('modalHostingTitle').textContent = 'Nuevo Dominio';
+    document.getElementById('h_num').value = '';
+    document.getElementById('h_dominio').value = '';
+    document.getElementById('h_vencimiento').value = '';
+    document.getElementById('h_estado').value = 'ACTIVO';
+    document.getElementById('h_dominio_propio').value = '';
+    document.getElementById('modalHosting').classList.add('open');
+  }
+}
+
+function closeModal(type) {
+  document.getElementById('modal' + (type === 'servidor' ? 'Servidor' : 'Hosting')).classList.remove('open');
+}
+
+function editServidor(slot) {
+  const r = servidor.find(x => x.slot === slot);
+  if (!r) return;
+  editingServidor = slot;
+  document.getElementById('modalServidorTitle').textContent = 'Editar Campaña — Slot ' + slot;
+  document.getElementById('s_slot').value = r.slot;
+  document.getElementById('s_cliente').value = r.cliente || '';
+  document.getElementById('s_opcion').value = r.opcion || '';
+  document.getElementById('s_inicio').value = r.inicio || '';
+  document.getElementById('s_fin').value = r.fin || '';
+  document.getElementById('modalServidor').classList.add('open');
+}
+
+function saveServidor() {
+  const slot = parseInt(document.getElementById('s_slot').value);
+  const cliente = document.getElementById('s_cliente').value.trim();
+  const opcion = parseFloat(document.getElementById('s_opcion').value) || null;
+  const inicio = document.getElementById('s_inicio').value;
+  const fin = document.getElementById('s_fin').value;
+
+  if (!slot) { alert('Ingresá el número de slot'); return; }
+
+  if (editingServidor !== null) {
+    const idx = servidor.findIndex(x => x.slot === editingServidor);
+    if (idx >= 0) servidor[idx] = {slot, cliente, opcion, inicio, fin};
+  } else {
+    const exists = servidor.find(x => x.slot === slot);
+    if (exists) { alert('Ya existe un slot con ese número'); return; }
+    servidor.push({slot, cliente, opcion, inicio, fin});
+    servidor.sort((a, b) => a.slot - b.slot);
+  }
+  closeModal('servidor');
+  renderServidor();
+}
+
+function deleteServidor(slot) {
+  if (!confirm('¿Eliminar campaña del slot ' + slot + '?')) return;
+  const idx = servidor.findIndex(x => x.slot === slot);
+  if (idx >= 0) {
+    servidor[idx] = {slot, cliente: '', opcion: null, inicio: '', fin: ''};
+  }
+  renderServidor();
+}
+
+function editHosting(num) {
+  const r = hosting.find(x => x.num === num);
+  if (!r) return;
+  editingHosting = num;
+  document.getElementById('modalHostingTitle').textContent = 'Editar Dominio #' + num;
+  document.getElementById('h_num').value = r.num;
+  document.getElementById('h_dominio').value = r.dominio;
+  document.getElementById('h_vencimiento').value = r.vencimiento || '';
+  document.getElementById('h_estado').value = r.estado;
+  document.getElementById('h_dominio_propio').value = r.dominioPropio || '';
+  document.getElementById('modalHosting').classList.add('open');
+}
+
+function saveHosting() {
+  const num = parseInt(document.getElementById('h_num').value);
+  const dominio = document.getElementById('h_dominio').value.trim();
+  const vencimiento = document.getElementById('h_vencimiento').value;
+  const estado = document.getElementById('h_estado').value;
+  const dominioPropio = document.getElementById('h_dominio_propio').value;
+
+  if (!num || !dominio) { alert('Completá número y dominio'); return; }
+
+  if (editingHosting !== null) {
+    const idx = hosting.findIndex(x => x.num === editingHosting);
+    if (idx >= 0) hosting[idx] = {num, dominio, vencimiento, estado, dominioPropio};
+  } else {
+    const exists = hosting.find(x => x.num === num);
+    if (exists) { alert('Ya existe un registro con ese número'); return; }
+    hosting.push({num, dominio, vencimiento, estado, dominioPropio});
+    hosting.sort((a, b) => a.num - b.num);
+  }
+  closeModal('hosting');
+  renderHosting();
+}
+
+function deleteHosting(num) {
+  if (!confirm('¿Eliminar dominio #' + num + '?')) return;
+  hosting = hosting.filter(x => x.num !== num);
+  renderHosting();
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+renderServidor();
+renderHosting();
+</script>
+</body>
+</html>
